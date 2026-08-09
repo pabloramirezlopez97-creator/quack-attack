@@ -1,0 +1,109 @@
+export type Role = "jefe" | "explorador";
+
+export type SpecialType =
+  | "dorado"
+  | "rojo"
+  | "negro"
+  | "blanco"
+  | "azul"
+  | "marron"
+  | "verde"
+  | "naranja";
+
+export type GameStatus =
+  | "lobby"
+  | "preparacion"
+  | "en_curso"
+  | "reunion"
+  | "finalizacion"
+  | "recuento"
+  | "resultados";
+
+export interface Game {
+  id: string;
+  code: string;
+  mode: 1 | 2 | 3;
+  status: GameStatus;
+  max_explorers: number;
+  max_jefes: number;
+  current_meeting: Record<string, unknown> | null;
+  timer_ends_at: string | null;
+  created_at: string;
+  finished_at: string | null;
+}
+
+export interface Player {
+  id: string;
+  game_id: string;
+  session_id: string;
+  name: string;
+  role: Role;
+  score: number;
+  is_blocked_until: string | null;
+  created_at: string;
+}
+
+export interface Duck {
+  id: string;
+  game_id: string;
+  number: number;
+  owner_id: string | null;
+  found_at: string | null;
+}
+
+export interface SpecialDuck {
+  id: string;
+  game_id: string;
+  type: SpecialType;
+  owner_id: string | null;
+  paired_duck_number: number | null;
+  status: "hidden" | "held" | "discarded";
+  used: boolean;
+  found_at: string | null;
+}
+
+// Valores de puntuación — Reglamento Oficial, sección 14
+export const SPECIAL_VALUES: Record<SpecialType, number> = {
+  dorado: 5,
+  rojo: -5,
+  negro: 0,
+  blanco: 0,
+  azul: 0,
+  marron: 0,
+  verde: 0,
+  naranja: 0,
+};
+
+// Penalización si un Especial Activo no se usó al finalizar — sección 10
+export const UNUSED_PENALTY: Record<SpecialType, number> = {
+  dorado: 0,
+  rojo: 0,
+  negro: -8,
+  blanco: 0, // el Blanco nunca penaliza por no usarse
+  azul: -8,
+  marron: -8,
+  verde: -8,
+  naranja: -8,
+};
+
+export const SPECIAL_LABELS: Record<SpecialType, string> = {
+  dorado: "Pato Dorado",
+  rojo: "Pato Rojo",
+  negro: "Pato Negro",
+  blanco: "Pato Blanco",
+  azul: "Pato Azul",
+  marron: "Pato Marrón",
+  verde: "Pato Verde",
+  naranja: "Pato Naranja",
+};
+
+export const SPECIAL_EMOJI: Record<SpecialType, string> = {
+  dorado: "🟡",
+  rojo: "🔴",
+  negro: "⚫",
+  blanco: "⚪",
+  azul: "🔵",
+  marron: "🟤",
+  verde: "🟢",
+  naranja: "🟠",
+};
