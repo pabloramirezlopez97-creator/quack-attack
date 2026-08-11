@@ -168,6 +168,47 @@ input { font-family: var(--font-body); }
 .role-pill.jefe { background: rgba(245,197,24,0.18); color: var(--yellow); }
 .role-pill.explorador { background: rgba(75,191,122,0.18); color: var(--success); }
 
+/* ---------- stepper (selector +/-) ---------- */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  width: 100%;
+}
+.stepper-btn {
+  appearance: none;
+  border: none;
+  background: #2a2f40;
+  color: var(--white);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stepper-btn:active {
+  background: var(--yellow);
+  color: #1a1200;
+}
+.stepper-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.stepper-value {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  min-width: 48px;
+  text-align: center;
+}
+
 .spinner {
   width: 18px; height: 18px; border: 3px solid var(--panel-border);
   border-top-color: var(--yellow); border-radius: 50%; animation: spin 0.8s linear infinite;
