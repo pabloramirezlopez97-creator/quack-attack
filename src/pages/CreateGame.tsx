@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import Stepper from "../components/Stepper";
 
 const MODES = [
   {
@@ -87,30 +88,24 @@ export default function CreateGame() {
         {mode === 3 && (
           <div className="field">
             <label>Nº máximo de Patos Exploradores (1–100)</label>
-            <input
-              type="number"
+            <Stepper
+              value={maxExplorers}
               min={1}
               max={100}
-              value={maxExplorers}
-              onChange={(e) =>
-                setMaxExplorers(
-                  Math.min(100, Math.max(1, Number(e.target.value) || 1))
-                )
-              }
+              onChange={setMaxExplorers}
+              label="Número máximo de Patos Exploradores"
             />
           </div>
         )}
 
         <div className="field">
           <label>Nº de Patos Jefe / Guardián (1–3)</label>
-          <input
-            type="number"
+          <Stepper
+            value={maxJefes}
             min={1}
             max={3}
-            value={maxJefes}
-            onChange={(e) =>
-              setMaxJefes(Math.min(3, Math.max(1, Number(e.target.value) || 1)))
-            }
+            onChange={setMaxJefes}
+            label="Número de Patos Jefe o Guardián"
           />
         </div>
 
