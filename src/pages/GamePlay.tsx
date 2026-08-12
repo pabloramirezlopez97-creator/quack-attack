@@ -3,12 +3,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import DuckGrid from "../components/DuckGrid";
 import SpecialDuckStrip from "../components/SpecialDuckStrip";
+import MeetingBanner from "../components/MeetingBanner";
+import JefePanel from "../components/JefePanel";
 import { SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Player, SpecialDuck } from "../types";
+import type { Duck, Game, Player, SpecialDuck, SpecialType } from "../types";
 
 type Selection =
   | { kind: "normal"; duck: Duck }
   | { kind: "special"; duck: SpecialDuck };
+
+interface MeetingInfo {
+  special_type: SpecialType;
+  player_name: string;
+  called_at: string;
+}
 
 export default function GamePlay() {
   const { code } = useParams<{ code: string }>();
@@ -25,6 +33,7 @@ export default function GamePlay() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [closingMeeting, setClosingMeeting] = useState(false);
 
   useEffect(() => {
     if (!code) return;
@@ -95,6 +104,11 @@ export default function GamePlay() {
           { event: "*", schema: "public", table: "special_ducks", filter: `game_id=eq.${gameData.id}` },
           refreshSpecialDucks
         )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "games", filter: `id=eq.${gameData.id}` },
+          (payload) => setGame(payload.new as Game)
+        )
         .subscribe();
     }
 
@@ -123,6 +137,13 @@ export default function GamePlay() {
     setSelection(null);
   }
 
+  async function handleCloseMeeting() {
+    if (!code) return;
+    setClosingMeeting(true);
+    await supabase.rpc("close_meeting", { p_code: code });
+    setClosingMeeting(false);
+  }
+
   if (loading) {
     return (
       <div className="screen center">
@@ -142,108 +163,99 @@ export default function GamePlay() {
     );
   }
 
-  const foundCount = ducks.filter((d) => d.owner_id).length;
-  const myFoundCount = ducks.filter((d) => d.owner_id === myPlayer?.id).length;
-  const allFound = foundCount === ducks.length && ducks.length > 0;
+  const isJefe = myPlayer?.role === "jefe";
+  const meeting = game.current_meeting as unknown as MeetingInfo | null;
 
-  if (myPlayer?.role === "jefe") {
+  const meetingBanner = meeting && (
+    <MeetingBanner
+      meeting={meeting}
+      isJefe={isJefe}
+      onClose={handleCloseMeeting}
+      closing={closingMeeting}
+    />
+  );
+
+  if (isJefe) {
     return (
-      <div className="screen">
-        <div className="topbar">
-          <h2>Partida {game.code}</h2>
-        </div>
-        <div className="stack">
-          <div className="card">
-            <p className="muted" style={{ marginBottom: 10 }}>
-              Progreso general: <strong className="num">{foundCount} / 100</strong>
-            </p>
-            {players
-              .filter((p) => p.role === "explorador")
-              .map((p) => (
-                <div className="player-row" key={p.id}>
-                  <span>🦆 {p.name}</span>
-                  <span className="num">{p.score} pts</span>
-                </div>
-              ))}
-          </div>
-          {allFound && (
-            <div className="card" style={{ borderColor: "var(--yellow)" }}>
-              <p style={{ color: "var(--yellow)", fontWeight: 700 }}>
-                🎉 ¡Los 100 Patos Normales han sido encontrados!
-              </p>
-            </div>
-          )}
-          <div className="card">
-            <p className="muted">
-              El panel completo del Pato Jefe (Reuniones en la Charca,
-              finalizar partida y recuento) llega en la siguiente fase.
-            </p>
-          </div>
-        </div>
-      </div>
+      <>
+        {meetingBanner}
+        <JefePanel game={game} players={players} ducks={ducks} specialDucks={specialDucks} />
+      </>
     );
   }
 
-  return (
-    <div className="screen" style={{ paddingBottom: 100 }}>
-      <div className="topbar">
-        <h2>Partida {game.code}</h2>
-      </div>
+  const foundCount = ducks.filter((d) => d.owner_id).length;
+  const myFoundCount = ducks.filter((d) => d.owner_id === myPlayer?.id).length;
+  const specialFoundCount = specialDucks.filter((d) => d.owner_id).length;
+  const allFound =
+    ducks.length > 0 &&
+    foundCount === ducks.length &&
+    specialDucks.length > 0 &&
+    specialFoundCount === specialDucks.length;
 
-      <div className="stack" style={{ marginBottom: 18 }}>
-        <div className="card" style={{ display: "flex", justifyContent: "space-between" }}>
-          <span className="muted">Tus patos: <strong className="num">{myFoundCount}</strong></span>
-          <span className="muted">Total: <strong className="num">{foundCount} / 100</strong></span>
+  return (
+    <>
+      {meetingBanner}
+      <div className="screen" style={{ paddingBottom: 100 }}>
+        <div className="topbar">
+          <h2>Partida {game.code}</h2>
         </div>
 
-        {allFound && (
-          <div className="card" style={{ borderColor: "var(--yellow)", textAlign: "center" }}>
-            <p style={{ color: "var(--yellow)", fontWeight: 700, margin: 0 }}>
-              🎉 ¡Todos encontrados!
-            </p>
+        <div className="stack" style={{ marginBottom: 18 }}>
+          <div className="card" style={{ display: "flex", justifyContent: "space-between" }}>
+            <span className="muted">Tus patos: <strong className="num">{myFoundCount}</strong></span>
+            <span className="muted">Total: <strong className="num">{foundCount} / 100</strong></span>
+          </div>
+
+          {allFound && (
+            <div className="card" style={{ borderColor: "var(--yellow)", textAlign: "center" }}>
+              <p style={{ color: "var(--yellow)", fontWeight: 700, margin: 0 }}>
+                🎉 ¡Todos encontrados!
+              </p>
+            </div>
+          )}
+        </div>
+
+        <p className="muted" style={{ marginBottom: 8 }}>Patos Especiales</p>
+        <div className="stack" style={{ marginBottom: 20 }}>
+          <SpecialDuckStrip
+            specialDucks={specialDucks}
+            onSelect={(duck) => setSelection({ kind: "special", duck })}
+          />
+        </div>
+
+        <p className="muted" style={{ marginBottom: 8 }}>Patos Normales</p>
+        <DuckGrid
+          ducks={ducks}
+          myPlayerId={myPlayer?.id}
+          onSelect={(duck) => setSelection({ kind: "normal", duck })}
+        />
+
+        {selection && (
+          <div className="modal-backdrop" onClick={() => !claiming && setSelection(null)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <h3>
+                {selection.kind === "normal"
+                  ? `¿Has encontrado el Pato ${selection.duck.number}?`
+                  : `¿Has encontrado el ${SPECIAL_LABELS[selection.duck.type]}?`}
+              </h3>
+              {claimError && <div className="alert" style={{ marginTop: 12 }}>{claimError}</div>}
+              <div className="modal-actions">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setSelection(null)}
+                  disabled={claiming}
+                >
+                  Cancelar
+                </button>
+                <button className="btn btn-primary" onClick={confirmClaim} disabled={claiming}>
+                  {claiming ? "…" : "¡Encontrado!"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      <p className="muted" style={{ marginBottom: 8 }}>Patos Especiales</p>
-      <div className="stack" style={{ marginBottom: 20 }}>
-        <SpecialDuckStrip
-          specialDucks={specialDucks}
-          onSelect={(duck) => setSelection({ kind: "special", duck })}
-        />
-      </div>
-
-      <p className="muted" style={{ marginBottom: 8 }}>Patos Normales</p>
-      <DuckGrid
-        ducks={ducks}
-        myPlayerId={myPlayer?.id}
-        onSelect={(duck) => setSelection({ kind: "normal", duck })}
-      />
-
-      {selection && (
-        <div className="modal-backdrop" onClick={() => !claiming && setSelection(null)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h3>
-              {selection.kind === "normal"
-                ? `¿Has encontrado el Pato ${selection.duck.number}?`
-                : `¿Has encontrado el ${SPECIAL_LABELS[selection.duck.type]}?`}
-            </h3>
-            {claimError && <div className="alert" style={{ marginTop: 12 }}>{claimError}</div>}
-            <div className="modal-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setSelection(null)}
-                disabled={claiming}
-              >
-                Cancelar
-              </button>
-              <button className="btn btn-primary" onClick={confirmClaim} disabled={claiming}>
-                {claiming ? "…" : "¡Encontrado!"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
