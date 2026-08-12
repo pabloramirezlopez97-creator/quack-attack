@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
 import type { Duck, Game, Player, SpecialDuck } from "../types";
 
@@ -19,6 +20,7 @@ interface JefePanelProps {
 }
 
 export default function JefePanel({ game, players, ducks, specialDucks }: JefePanelProps) {
+  const nav = useNavigate();
   const foundCount = ducks.filter((d) => d.owner_id).length;
   const specialFoundCount = specialDucks.filter((d) => d.owner_id).length;
   const allFound =
@@ -33,6 +35,9 @@ export default function JefePanel({ game, players, ducks, specialDucks }: JefePa
   return (
     <div className="screen">
       <div className="topbar">
+        <button className="back-btn" onClick={() => nav("/")} aria-label="Salir de la partida">
+          ←
+        </button>
         <h2>Partida {game.code}</h2>
       </div>
 
