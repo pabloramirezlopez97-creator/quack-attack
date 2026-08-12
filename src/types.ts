@@ -107,3 +107,15 @@ export const SPECIAL_EMOJI: Record<SpecialType, string> = {
   verde: "🟢",
   naranja: "🟠",
 };
+
+// Color propio de cada Pato Especial, usado como fondo de su casilla
+export const SPECIAL_COLORS: Record<SpecialType, string> = {
+  dorado: "#f5c518",
+  rojo: "#e15b5b",
+  negro: "#2b2b33",
+  blanco: "#f4f4f6",
+  azul: "#4a90d9",
+  marron: "#8b5e3c",
+  verde: "#4bbf7a",
+  naranja: "#f5a623",
+};
