@@ -9,8 +9,9 @@ import { SPECIAL_LABELS } from "../types";
 import type { Duck, Game, Player, SpecialDuck, SpecialType } from "../types";
 
 type Selection =
-  | { kind: "normal"; duck: Duck }
-  | { kind: "special"; duck: SpecialDuck };
+  | { kind: "find_normal"; duck: Duck }
+  | { kind: "find_special"; duck: SpecialDuck }
+  | { kind: "activate_special"; duck: SpecialDuck };
 
 interface MeetingInfo {
   special_type: SpecialType;
@@ -31,8 +32,8 @@ export default function GamePlay() {
   const [error, setError] = useState<string | null>(null);
 
   const [selection, setSelection] = useState<Selection | null>(null);
-  const [claiming, setClaiming] = useState(false);
-  const [claimError, setClaimError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [closingMeeting, setClosingMeeting] = useState(false);
 
   useEffect(() => {
@@ -118,20 +119,22 @@ export default function GamePlay() {
     };
   }, [code]);
 
-  async function confirmClaim() {
+  async function confirmSelection() {
     if (!selection) return;
-    setClaiming(true);
-    setClaimError(null);
+    setSubmitting(true);
+    setActionError(null);
 
     const rpc =
-      selection.kind === "normal"
+      selection.kind === "find_normal"
         ? supabase.rpc("claim_duck", { p_duck_id: selection.duck.id })
-        : supabase.rpc("claim_special_duck", { p_special_id: selection.duck.id });
+        : selection.kind === "find_special"
+        ? supabase.rpc("claim_special_duck", { p_special_id: selection.duck.id })
+        : supabase.rpc("activate_special", { p_special_id: selection.duck.id });
 
     const { error: rpcError } = await rpc;
-    setClaiming(false);
+    setSubmitting(false);
     if (rpcError) {
-      setClaimError(rpcError.message);
+      setActionError(rpcError.message);
       return;
     }
     setSelection(null);
@@ -216,11 +219,15 @@ export default function GamePlay() {
           )}
         </div>
 
-        <p className="muted" style={{ marginBottom: 8 }}>Patos Especiales</p>
+        <p className="muted" style={{ marginBottom: 8 }}>
+          Patos Especiales <span style={{ opacity: 0.7 }}>· toca 📣 cuando quieras activarlo</span>
+        </p>
         <div className="stack" style={{ marginBottom: 20 }}>
           <SpecialDuckStrip
             specialDucks={specialDucks}
-            onSelect={(duck) => setSelection({ kind: "special", duck })}
+            myPlayerId={myPlayer?.id}
+            onSelect={(duck) => setSelection({ kind: "find_special", duck })}
+            onActivate={(duck) => setSelection({ kind: "activate_special", duck })}
           />
         </div>
 
@@ -228,28 +235,41 @@ export default function GamePlay() {
         <DuckGrid
           ducks={ducks}
           myPlayerId={myPlayer?.id}
-          onSelect={(duck) => setSelection({ kind: "normal", duck })}
+          onSelect={(duck) => setSelection({ kind: "find_normal", duck })}
         />
 
         {selection && (
-          <div className="modal-backdrop" onClick={() => !claiming && setSelection(null)}>
+          <div className="modal-backdrop" onClick={() => !submitting && setSelection(null)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
               <h3>
-                {selection.kind === "normal"
-                  ? `¿Has encontrado el Pato ${selection.duck.number}?`
-                  : `¿Has encontrado el ${SPECIAL_LABELS[selection.duck.type]}?`}
+                {selection.kind === "find_normal" &&
+                  `¿Has encontrado el Pato ${selection.duck.number}?`}
+                {selection.kind === "find_special" &&
+                  `¿Has encontrado el ${SPECIAL_LABELS[selection.duck.type]}?`}
+                {selection.kind === "activate_special" &&
+                  `¿Activar el ${SPECIAL_LABELS[selection.duck.type]} ahora?`}
               </h3>
-              {claimError && <div className="alert" style={{ marginTop: 12 }}>{claimError}</div>}
+              {selection.kind === "activate_special" && (
+                <p className="muted" style={{ marginTop: 8 }}>
+                  Esto convoca una Reunión en la Charca para todos ahora
+                  mismo. Solo hazlo cuando quieras usarlo de verdad.
+                </p>
+              )}
+              {actionError && <div className="alert" style={{ marginTop: 12 }}>{actionError}</div>}
               <div className="modal-actions">
                 <button
                   className="btn btn-secondary"
                   onClick={() => setSelection(null)}
-                  disabled={claiming}
+                  disabled={submitting}
                 >
                   Cancelar
                 </button>
-                <button className="btn btn-primary" onClick={confirmClaim} disabled={claiming}>
-                  {claiming ? "…" : "¡Encontrado!"}
+                <button className="btn btn-primary" onClick={confirmSelection} disabled={submitting}>
+                  {submitting
+                    ? "…"
+                    : selection.kind === "activate_special"
+                    ? "📣 Activar"
+                    : "¡Encontrado!"}
                 </button>
               </div>
             </div>
