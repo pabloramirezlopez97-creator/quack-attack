@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import DuckGrid, { ownerName } from "../components/DuckGrid";
-import type { Duck, Game, Player } from "../types";
+import DuckGrid from "../components/DuckGrid";
+import SpecialDuckStrip from "../components/SpecialDuckStrip";
+import { SPECIAL_LABELS } from "../types";
+import type { Duck, Game, Player, SpecialDuck } from "../types";
+
+type Selection =
+  | { kind: "normal"; duck: Duck }
+  | { kind: "special"; duck: SpecialDuck };
 
 export default function GamePlay() {
   const { code } = useParams<{ code: string }>();
@@ -11,11 +17,12 @@ export default function GamePlay() {
   const [game, setGame] = useState<Game | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [ducks, setDucks] = useState<Duck[]>([]);
+  const [specialDucks, setSpecialDucks] = useState<SpecialDuck[]>([]);
   const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedDuck, setSelectedDuck] = useState<Duck | null>(null);
+  const [selection, setSelection] = useState<Selection | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
 
@@ -60,7 +67,15 @@ export default function GamePlay() {
         setDucks((data as Duck[]) ?? []);
       }
 
-      await Promise.all([refreshPlayers(), refreshDucks()]);
+      async function refreshSpecialDucks() {
+        const { data } = await supabase
+          .from("special_ducks")
+          .select("*")
+          .eq("game_id", gameData.id);
+        setSpecialDucks((data as SpecialDuck[]) ?? []);
+      }
+
+      await Promise.all([refreshPlayers(), refreshDucks(), refreshSpecialDucks()]);
       setLoading(false);
 
       channel = supabase
@@ -75,6 +90,11 @@ export default function GamePlay() {
           { event: "*", schema: "public", table: "ducks", filter: `game_id=eq.${gameData.id}` },
           refreshDucks
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "special_ducks", filter: `game_id=eq.${gameData.id}` },
+          refreshSpecialDucks
+        )
         .subscribe();
     }
 
@@ -85,18 +105,22 @@ export default function GamePlay() {
   }, [code]);
 
   async function confirmClaim() {
-    if (!selectedDuck) return;
+    if (!selection) return;
     setClaiming(true);
     setClaimError(null);
-    const { error: rpcError } = await supabase.rpc("claim_duck", {
-      p_duck_id: selectedDuck.id,
-    });
+
+    const rpc =
+      selection.kind === "normal"
+        ? supabase.rpc("claim_duck", { p_duck_id: selection.duck.id })
+        : supabase.rpc("claim_special_duck", { p_special_id: selection.duck.id });
+
+    const { error: rpcError } = await rpc;
     setClaiming(false);
     if (rpcError) {
       setClaimError(rpcError.message);
       return;
     }
-    setSelectedDuck(null);
+    setSelection(null);
   }
 
   if (loading) {
@@ -120,6 +144,7 @@ export default function GamePlay() {
 
   const foundCount = ducks.filter((d) => d.owner_id).length;
   const myFoundCount = ducks.filter((d) => d.owner_id === myPlayer?.id).length;
+  const allFound = foundCount === ducks.length && ducks.length > 0;
 
   if (myPlayer?.role === "jefe") {
     return (
@@ -130,22 +155,28 @@ export default function GamePlay() {
         <div className="stack">
           <div className="card">
             <p className="muted" style={{ marginBottom: 10 }}>
-              Progreso general: <strong style={{ color: "var(--white)" }}>{foundCount} / 100</strong>
+              Progreso general: <strong className="num">{foundCount} / 100</strong>
             </p>
             {players
               .filter((p) => p.role === "explorador")
               .map((p) => (
                 <div className="player-row" key={p.id}>
                   <span>🦆 {p.name}</span>
-                  <span className="muted">{p.score} pts</span>
+                  <span className="num">{p.score} pts</span>
                 </div>
               ))}
           </div>
+          {allFound && (
+            <div className="card" style={{ borderColor: "var(--yellow)" }}>
+              <p style={{ color: "var(--yellow)", fontWeight: 700 }}>
+                🎉 ¡Los 100 Patos Normales han sido encontrados!
+              </p>
+            </div>
+          )}
           <div className="card">
             <p className="muted">
-              El panel completo del Pato Jefe (Especiales, Reuniones en la
-              Charca, finalizar partida) llega en la siguiente fase. Por
-              ahora, aquí puedes seguir el progreso en vivo.
+              El panel completo del Pato Jefe (Reuniones en la Charca,
+              finalizar partida y recuento) llega en la siguiente fase.
             </p>
           </div>
         </div>
@@ -161,22 +192,47 @@ export default function GamePlay() {
 
       <div className="stack" style={{ marginBottom: 18 }}>
         <div className="card" style={{ display: "flex", justifyContent: "space-between" }}>
-          <span className="muted">Tus patos: <strong style={{ color: "var(--white)" }}>{myFoundCount}</strong></span>
-          <span className="muted">Total: <strong style={{ color: "var(--white)" }}>{foundCount} / 100</strong></span>
+          <span className="muted">Tus patos: <strong className="num">{myFoundCount}</strong></span>
+          <span className="muted">Total: <strong className="num">{foundCount} / 100</strong></span>
         </div>
+
+        {allFound && (
+          <div className="card" style={{ borderColor: "var(--yellow)", textAlign: "center" }}>
+            <p style={{ color: "var(--yellow)", fontWeight: 700, margin: 0 }}>
+              🎉 ¡Todos encontrados!
+            </p>
+          </div>
+        )}
       </div>
 
-      <DuckGrid ducks={ducks} myPlayerId={myPlayer?.id} onSelect={setSelectedDuck} />
+      <p className="muted" style={{ marginBottom: 8 }}>Patos Especiales</p>
+      <div className="stack" style={{ marginBottom: 20 }}>
+        <SpecialDuckStrip
+          specialDucks={specialDucks}
+          onSelect={(duck) => setSelection({ kind: "special", duck })}
+        />
+      </div>
 
-      {selectedDuck && (
-        <div className="modal-backdrop" onClick={() => !claiming && setSelectedDuck(null)}>
+      <p className="muted" style={{ marginBottom: 8 }}>Patos Normales</p>
+      <DuckGrid
+        ducks={ducks}
+        myPlayerId={myPlayer?.id}
+        onSelect={(duck) => setSelection({ kind: "normal", duck })}
+      />
+
+      {selection && (
+        <div className="modal-backdrop" onClick={() => !claiming && setSelection(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h3>¿Has encontrado el Pato {selectedDuck.number}?</h3>
+            <h3>
+              {selection.kind === "normal"
+                ? `¿Has encontrado el Pato ${selection.duck.number}?`
+                : `¿Has encontrado el ${SPECIAL_LABELS[selection.duck.type]}?`}
+            </h3>
             {claimError && <div className="alert" style={{ marginTop: 12 }}>{claimError}</div>}
             <div className="modal-actions">
               <button
                 className="btn btn-secondary"
-                onClick={() => setSelectedDuck(null)}
+                onClick={() => setSelection(null)}
                 disabled={claiming}
               >
                 Cancelar
@@ -191,6 +247,3 @@ export default function GamePlay() {
     </div>
   );
 }
-
-// Se reexporta por si otras pantallas necesitan el nombre del dueño de un pato.
-export { ownerName };
