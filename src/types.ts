@@ -119,3 +119,7 @@ export const SPECIAL_COLORS: Record<SpecialType, string> = {
   verde: "#4bbf7a",
   naranja: "#f5a623",
 };
+
+// Especiales ACTIVOS: requieren que su dueño decida activarlos (Reunión en la Charca).
+// Dorado, Rojo y Blanco son pasivos y nunca se activan.
+export const ACTIVE_SPECIAL_TYPES: SpecialType[] = ["negro", "verde", "marron", "naranja", "azul"];
