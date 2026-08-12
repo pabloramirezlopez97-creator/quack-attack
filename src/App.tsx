@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import CreateGame from "./pages/CreateGame";
 import JoinGame from "./pages/JoinGame";
 import Lobby from "./pages/Lobby";
+import GamePlay from "./pages/GamePlay";
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/crear" element={<CreateGame />} />
         <Route path="/unirse" element={<JoinGame />} />
         <Route path="/sala/:code" element={<Lobby />} />
+        <Route path="/partida/:code" element={<GamePlay />} />
       </Routes>
     </BrowserRouter>
   );

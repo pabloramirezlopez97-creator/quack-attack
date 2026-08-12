@@ -168,6 +168,75 @@ input { font-family: var(--font-body); }
 .role-pill.jefe { background: rgba(245,197,24,0.18); color: var(--yellow); }
 .role-pill.explorador { background: rgba(75,191,122,0.18); color: var(--success); }
 
+/* ---------- cuadrícula de patos ---------- */
+.duck-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+.duck-tile {
+  appearance: none;
+  border: 2px solid var(--panel-border);
+  background: var(--panel);
+  color: var(--white);
+  border-radius: 8px;
+  aspect-ratio: 1;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.duck-tile:active {
+  transform: scale(0.93);
+}
+.duck-tile.mine {
+  background: rgba(75, 191, 122, 0.18);
+  border-color: var(--success);
+  color: var(--success);
+}
+.duck-tile.taken {
+  background: #14161d;
+  border-color: #1e222e;
+  color: #454b5e;
+  pointer-events: none;
+}
+
+/* ---------- modal de confirmación ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 50;
+}
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: 26px 22px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+.modal-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.modal-actions .btn {
+  flex: 1;
+}
+
 /* ---------- stepper (selector +/-) ---------- */
 .stepper {
   display: flex;
