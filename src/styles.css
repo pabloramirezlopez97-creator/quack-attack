@@ -1,4 +1,29 @@
 /* ============================================================
+   QUACK ATTACK — Tipografías propias
+   ============================================================ */
+@font-face {
+  font-family: "Tomato Grotesk";
+  src: url("/fonts/TomatoGrotesk-Black.woff") format("woff");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Tomato Grotesk";
+  src: url("/fonts/TomatoGrotesk-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Tomato Grotesk";
+  src: url("/fonts/TomatoGrotesk-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
    QUACK ATTACK — Design tokens
    Paleta extraída del logo oficial: azul marino profundo,
    amarillo/naranja del "ATTACK", blanco del "QUACK".
@@ -18,8 +43,12 @@
   --radius-md: 18px;
   --radius-sm: 12px;
 
-  --font-display: "Baloo 2", system-ui, sans-serif;
-  --font-body: "Nunito Sans", system-ui, -apple-system, sans-serif;
+  /* Tomato Grotesk Black: títulos, cabeceras, botones, índices/etiquetas */
+  --font-display: "Tomato Grotesk", system-ui, sans-serif;
+  /* Tomato Grotesk Regular: cuerpo de texto general */
+  --font-body: "Tomato Grotesk", system-ui, -apple-system, sans-serif;
+  /* Oswald: SOLO números (patos, puntuaciones, código de sala) y avisos/errores */
+  --font-numeric: "Oswald", system-ui, sans-serif;
 
   color-scheme: dark;
 }
@@ -45,13 +74,15 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font-display);
+  font-weight: 900;
   margin: 0;
   letter-spacing: 0.01em;
 }
 
 p { margin: 0; line-height: 1.5; }
 .muted { color: var(--text-muted); }
-button { font-family: var(--font-display); cursor: pointer; }
+.num { font-family: var(--font-numeric); color: var(--white); font-weight: 600; }
+button { font-family: var(--font-display); font-weight: 900; cursor: pointer; }
 input { font-family: var(--font-body); }
 
 /* ---------- layout ---------- */
@@ -124,7 +155,7 @@ input { font-family: var(--font-body); }
 .field input:focus { border-color: var(--yellow); }
 .code-input {
   text-transform: uppercase; letter-spacing: 0.35em; text-align: center;
-  font-family: var(--font-display); font-size: 1.5rem !important;
+  font-family: var(--font-numeric); font-size: 1.5rem !important;
 }
 
 /* ---------- topbar ---------- */
@@ -147,12 +178,12 @@ input { font-family: var(--font-body); }
 .alert {
   background: rgba(225,91,91,0.15); border: 1px solid var(--danger);
   color: #ffb3b3; border-radius: var(--radius-sm); padding: 12px 14px;
-  font-size: 0.9rem; width: 100%;
+  font-size: 0.9rem; width: 100%; font-family: var(--font-numeric);
 }
 
 /* ---------- lobby / sala de espera ---------- */
 .game-code {
-  font-family: var(--font-display); font-size: 2.4rem; letter-spacing: 0.25em;
+  font-family: var(--font-numeric); font-size: 2.4rem; letter-spacing: 0.25em;
   background: var(--panel); border: 2px dashed var(--yellow);
   border-radius: var(--radius-md); padding: 18px 10px; width: 100%; text-align: center;
 }
@@ -168,6 +199,39 @@ input { font-family: var(--font-body); }
 .role-pill.jefe { background: rgba(245,197,24,0.18); color: var(--yellow); }
 .role-pill.explorador { background: rgba(75,191,122,0.18); color: var(--success); }
 
+/* ---------- franja de Patos Especiales ---------- */
+.special-strip {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.special-tile {
+  appearance: none;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.special-tile:active {
+  transform: scale(0.93);
+}
+.special-emoji {
+  font-size: 1.4rem;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+}
+.special-tile.found {
+  background: #14161d !important;
+  border-color: #1e222e;
+  pointer-events: none;
+}
+.special-tile.found .special-emoji {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
 /* ---------- cuadrícula de patos ---------- */
 .duck-grid {
   display: grid;
@@ -182,9 +246,9 @@ input { font-family: var(--font-body); }
   color: var(--white);
   border-radius: 8px;
   aspect-ratio: 1;
-  font-family: var(--font-display);
+  font-family: var(--font-numeric);
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -272,7 +336,7 @@ input { font-family: var(--font-body); }
   pointer-events: none;
 }
 .stepper-value {
-  font-family: var(--font-display);
+  font-family: var(--font-numeric);
   font-size: 1.4rem;
   min-width: 48px;
   text-align: center;
