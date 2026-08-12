@@ -15,9 +15,11 @@ export default function Lobby() {
 
   const [game, setGame] = useState<Game | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     if (!code) return;
@@ -37,15 +39,24 @@ export default function Lobby() {
       }
       setGame(gameData as Game);
 
-      const { data: playersData } = await supabase
-        .from("players")
-        .select("*")
-        .eq("game_id", gameData.id)
-        .order("created_at", { ascending: true });
-      setPlayers((playersData as Player[]) ?? []);
+      const { data: userData } = await supabase.auth.getUser();
+      const myId = userData.user?.id;
+
+      async function refreshPlayers() {
+        const { data: refreshed } = await supabase
+          .from("players")
+          .select("*")
+          .eq("game_id", gameData.id)
+          .order("created_at", { ascending: true });
+        const list = (refreshed as Player[]) ?? [];
+        setPlayers(list);
+        setMyPlayer(list.find((p) => p.session_id === myId) ?? null);
+      }
+
+      await refreshPlayers();
       setLoading(false);
 
-      // Tiempo real: nuevos jugadores entrando a la sala
+      // Tiempo real: jugadores entrando + cambios de estado de la partida
       channel = supabase
         .channel(`lobby-${gameData.id}`)
         .on(
@@ -56,13 +67,22 @@ export default function Lobby() {
             table: "players",
             filter: `game_id=eq.${gameData.id}`,
           },
-          async () => {
-            const { data: refreshed } = await supabase
-              .from("players")
-              .select("*")
-              .eq("game_id", gameData.id)
-              .order("created_at", { ascending: true });
-            setPlayers((refreshed as Player[]) ?? []);
+          refreshPlayers
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "games",
+            filter: `id=eq.${gameData.id}`,
+          },
+          (payload) => {
+            const updated = payload.new as Game;
+            setGame(updated);
+            if (updated.status === "en_curso") {
+              nav(`/partida/${updated.code}`);
+            }
           }
         )
         .subscribe();
@@ -72,13 +92,25 @@ export default function Lobby() {
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, [code]);
+  }, [code, nav]);
 
   function copyCode() {
     if (!code) return;
     navigator.clipboard?.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  async function handleStart() {
+    if (!code) return;
+    setStarting(true);
+    const { error: rpcError } = await supabase.rpc("start_game", { p_code: code });
+    setStarting(false);
+    if (rpcError) {
+      setError(rpcError.message);
+      return;
+    }
+    nav(`/partida/${code}`);
   }
 
   if (loading) {
@@ -102,6 +134,7 @@ export default function Lobby() {
 
   const jefes = players.filter((p) => p.role === "jefe");
   const exploradores = players.filter((p) => p.role === "explorador");
+  const isJefe = myPlayer?.role === "jefe";
 
   return (
     <div className="screen">
@@ -142,13 +175,30 @@ export default function Lobby() {
           )}
         </div>
 
-        <div className="card">
-          <p className="muted">
-            El Pato Jefe / Guardián esconde ahora los 100 Patos Normales,
-            emparejando siempre cada Pato Especial con uno Normal. Cuando
-            el escondite esté listo, ¡empieza la búsqueda!
-          </p>
-        </div>
+        {isJefe ? (
+          <>
+            <div className="card">
+              <p className="muted">
+                Esconde ahora los 100 Patos Normales, emparejando siempre
+                cada Pato Especial con uno Normal. Cuando el escondite esté
+                listo, pulsa el botón para abrir la búsqueda a todos los
+                Exploradores.
+              </p>
+            </div>
+            {error && <div className="alert">{error}</div>}
+            <button className="btn btn-primary" onClick={handleStart} disabled={starting}>
+              {starting ? "Iniciando…" : "🦆 Empezar búsqueda"}
+            </button>
+          </>
+        ) : (
+          <div className="card">
+            <p className="muted">
+              El Pato Jefe / Guardián está escondiendo los patos. En cuanto
+              pulse "Empezar búsqueda", entrarás automáticamente — no hace
+              falta que hagas nada más aquí.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
