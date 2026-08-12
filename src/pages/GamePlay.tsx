@@ -201,6 +201,9 @@ export default function GamePlay() {
       {meetingBanner}
       <div className="screen" style={{ paddingBottom: 100 }}>
         <div className="topbar">
+          <button className="back-btn" onClick={() => nav("/")} aria-label="Salir de la partida">
+            ←
+          </button>
           <h2>Partida {game.code}</h2>
         </div>
 
