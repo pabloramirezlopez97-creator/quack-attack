@@ -239,10 +239,17 @@ input { font-family: var(--font-body); }
   gap: 8px;
   width: 100%;
 }
+.special-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
 .special-tile {
   appearance: none;
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
+  width: 100%;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -250,6 +257,10 @@ input { font-family: var(--font-body); }
 }
 .special-tile:active {
   transform: scale(0.93);
+}
+.special-tile.mine {
+  border-color: var(--white);
+  border-width: 3px;
 }
 .special-emoji {
   font-size: 1.4rem;
@@ -263,6 +274,21 @@ input { font-family: var(--font-body); }
 .special-tile.found .special-emoji {
   opacity: 0.25;
   filter: grayscale(1);
+}
+.megaphone-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  padding: 2px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.megaphone-btn:active {
+  transform: scale(0.85);
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.12); }
 }
 
 /* ---------- cuadrícula de patos ---------- */
