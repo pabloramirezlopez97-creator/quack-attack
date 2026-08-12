@@ -21,7 +21,7 @@ export default function MeetingBanner({ meeting, isJefe, onClose, closing }: Mee
         {SPECIAL_EMOJI[meeting.special_type]} ¡REUNIÓN EN LA CHARCA!
       </p>
       <p className="meeting-body">
-        <strong>{meeting.player_name}</strong> ha encontrado el{" "}
+        <strong>{meeting.player_name}</strong> ha activado el{" "}
         {SPECIAL_LABELS[meeting.special_type]}. Reuníos junto al Pato Jefe.
       </p>
       {isJefe ? (
