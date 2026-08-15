@@ -4,20 +4,15 @@ import { supabase } from "../supabaseClient";
 import DuckGrid from "../components/DuckGrid";
 import SpecialDuckStrip from "../components/SpecialDuckStrip";
 import MeetingBanner from "../components/MeetingBanner";
+import MeetingResolutionPanel from "../components/MeetingResolutionPanel";
 import JefePanel from "../components/JefePanel";
 import { SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Player, SpecialDuck, SpecialType } from "../types";
+import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
 
 type Selection =
   | { kind: "find_normal"; duck: Duck }
   | { kind: "find_special"; duck: SpecialDuck }
   | { kind: "activate_special"; duck: SpecialDuck };
-
-interface MeetingInfo {
-  special_type: SpecialType;
-  player_name: string;
-  called_at: string;
-}
 
 export default function GamePlay() {
   const { code } = useParams<{ code: string }>();
@@ -182,7 +177,13 @@ export default function GamePlay() {
     return (
       <>
         {meetingBanner}
-        <JefePanel game={game} players={players} ducks={ducks} specialDucks={specialDucks} />
+        <JefePanel
+          game={game}
+          players={players}
+          ducks={ducks}
+          specialDucks={specialDucks}
+          myPlayerId={myPlayer?.id}
+        />
       </>
     );
   }
@@ -206,6 +207,17 @@ export default function GamePlay() {
           </button>
           <h2>Partida {game.code}</h2>
         </div>
+
+        {meeting && (
+          <div className="stack" style={{ marginBottom: 18 }}>
+            <MeetingResolutionPanel
+              meeting={meeting}
+              players={players}
+              specialDucks={specialDucks}
+              myPlayerId={myPlayer?.id}
+            />
+          </div>
+        )}
 
         <div className="stack" style={{ marginBottom: 18 }}>
           <div className="card" style={{ display: "flex", justifyContent: "space-between" }}>
