@@ -5,6 +5,7 @@ import DuckGrid from "../components/DuckGrid";
 import SpecialDuckStrip from "../components/SpecialDuckStrip";
 import MeetingBanner from "../components/MeetingBanner";
 import MeetingResolutionPanel from "../components/MeetingResolutionPanel";
+import BlockedOverlay from "../components/BlockedOverlay";
 import JefePanel from "../components/JefePanel";
 import { SPECIAL_LABELS } from "../types";
 import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
@@ -200,6 +201,9 @@ export default function GamePlay() {
   return (
     <>
       {meetingBanner}
+      {myPlayer?.is_blocked_until && new Date(myPlayer.is_blocked_until).getTime() > Date.now() && (
+        <BlockedOverlay blockedUntil={myPlayer.is_blocked_until} />
+      )}
       <div className="screen" style={{ paddingBottom: 100 }}>
         <div className="topbar">
           <button className="back-btn" onClick={() => nav("/")} aria-label="Salir de la partida">
@@ -215,6 +219,7 @@ export default function GamePlay() {
               players={players}
               specialDucks={specialDucks}
               myPlayerId={myPlayer?.id}
+              isJefe={false}
             />
           </div>
         )}
