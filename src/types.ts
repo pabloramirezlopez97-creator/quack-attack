@@ -1,4 +1,3 @@
-// v3 — incluye MeetingInfo (revisión de Fase 3)
 export type Role = "jefe" | "explorador";
 
 export type SpecialType =
@@ -60,6 +59,7 @@ export interface SpecialDuck {
   paired_duck_number: number | null;
   status: "hidden" | "held" | "discarded";
   used: boolean;
+  ever_activated: boolean;
   found_at: string | null;
 }
 
