@@ -199,6 +199,33 @@ input { font-family: var(--font-body); }
 .role-pill.jefe { background: rgba(245,197,24,0.18); color: var(--yellow); }
 .role-pill.explorador { background: rgba(75,191,122,0.18); color: var(--success); }
 
+/* ---------- bloqueo del Pato Marrón ---------- */
+.blocked-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 8, 4, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  text-align: center;
+}
+.blocked-emoji {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+.blocked-count {
+  font-family: var(--font-numeric);
+  font-size: 4rem;
+  color: var(--white);
+  margin: 0;
+}
+.blocked-label {
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
 /* ---------- Reunión en la Charca ---------- */
 .meeting-banner {
   background: linear-gradient(180deg, #2a2410, var(--panel));
