@@ -8,9 +8,10 @@ interface Props {
   players: Player[];
   specialDucks: SpecialDuck[];
   myPlayerId: string | undefined;
+  isJefe: boolean;
 }
 
-export default function MeetingResolutionPanel({ meeting, players, specialDucks, myPlayerId }: Props) {
+export default function MeetingResolutionPanel({ meeting, players, specialDucks, myPlayerId, isJefe }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -127,6 +128,45 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
     );
   }
 
+  // ---------- NARANJA: la escribe el Jefe, no el Explorador ----------
+  if (meeting.special_type === "naranja") {
+    if (!isJefe) {
+      return (
+        <div className="card">
+          <p className="muted">
+            🟠 Esperando a que el Pato Jefe / Guardián te envíe una pista…
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="card">
+        <p className="muted" style={{ marginBottom: 10 }}>
+          🟠 Escribe una pista para <strong style={{ color: "var(--white)" }}>{meeting.player_name}</strong> (debe
+          ayudar a encontrar UN Pato Normal, nunca puede señalar un Especial):
+        </p>
+        <div className="field" style={{ marginBottom: 12 }}>
+          <input
+            type="text"
+            placeholder="Ej: Está cerca de algo azul…"
+            value={hintText}
+            onChange={(e) => setHintText(e.target.value)}
+          />
+        </div>
+        {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
+        <button
+          className="btn btn-primary"
+          disabled={!hintText.trim() || submitting}
+          onClick={() =>
+            run(() => supabase.rpc("resolve_naranja", { p_special_id: meeting.special_id, p_hint_text: hintText.trim() }))
+          }
+        >
+          {submitting ? "…" : "🟠 Enviar pista"}
+        </button>
+      </div>
+    );
+  }
+
   // ---------- No soy quien lo activó: esperar ----------
   if (myPlayerId !== meeting.player_id) {
     return (
@@ -169,35 +209,6 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
           }
         >
           {submitting ? "…" : "🟤 Bloquear"}
-        </button>
-      </div>
-    );
-  }
-
-  // ---------- NARANJA ----------
-  if (meeting.special_type === "naranja") {
-    return (
-      <div className="card">
-        <p className="muted" style={{ marginBottom: 10 }}>
-          🟠 Escribe una pista para encontrar UN Pato Normal (nunca puede señalar un Especial):
-        </p>
-        <div className="field" style={{ marginBottom: 12 }}>
-          <input
-            type="text"
-            placeholder="Ej: Está cerca de algo azul…"
-            value={hintText}
-            onChange={(e) => setHintText(e.target.value)}
-          />
-        </div>
-        {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
-        <button
-          className="btn btn-primary"
-          disabled={!hintText.trim() || submitting}
-          onClick={() =>
-            run(() => supabase.rpc("resolve_naranja", { p_special_id: meeting.special_id, p_hint_text: hintText.trim() }))
-          }
-        >
-          {submitting ? "…" : "🟠 Enviar pista"}
         </button>
       </div>
     );
