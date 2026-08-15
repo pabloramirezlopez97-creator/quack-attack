@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
 import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
 import MeetingResolutionPanel from "./MeetingResolutionPanel";
@@ -23,6 +25,10 @@ interface JefePanelProps {
 
 export default function JefePanel({ game, players, ducks, specialDucks, myPlayerId }: JefePanelProps) {
   const nav = useNavigate();
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
+
   const foundCount = ducks.filter((d) => d.owner_id).length;
   const specialFoundCount = specialDucks.filter((d) => d.owner_id).length;
   const allFound =
@@ -34,6 +40,25 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
   const exploradores = players.filter((p) => p.role === "explorador");
   const ownerName = (id: string | null) => players.find((p) => p.id === id)?.name ?? null;
   const meeting = game.current_meeting as unknown as MeetingInfo | null;
+
+  const pendingActive = specialDucks.filter(
+    (s) =>
+      ["negro", "verde", "marron", "naranja", "azul"].includes(s.type) &&
+      !s.ever_activated &&
+      s.owner_id
+  );
+
+  async function handleFinalize() {
+    setFinishing(true);
+    setFinishError(null);
+    const { error } = await supabase.rpc("finalize_game", { p_code: game.code });
+    setFinishing(false);
+    if (error) {
+      setFinishError(error.message);
+      return;
+    }
+    setConfirmingFinish(false);
+  }
 
   return (
     <div className="screen">
@@ -106,15 +131,43 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
             ))}
         </div>
 
-        <div className="card">
-          <p className="muted">
-            Las habilidades de cada Especial (Negro, Verde, Marrón, Naranja,
-            Azul) y el botón de finalizar partida llegan en la siguiente
-            fase. Por ahora, aquí supervisas todo en vivo y cierras las
-            Reuniones en la Charca.
-          </p>
-        </div>
+        <button className="btn btn-primary" onClick={() => setConfirmingFinish(true)}>
+          🏁 Finalizar partida
+        </button>
       </div>
+
+      {confirmingFinish && (
+        <div className="modal-backdrop" onClick={() => !finishing && setConfirmingFinish(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h3>¿Finalizar la partida?</h3>
+            <p className="muted" style={{ marginTop: 8 }}>
+              Se aplicará el Dorado (+5) y el Rojo (−5) a quien los tenga, y
+              −8 por cada Especial Activo que nadie llegó a activar.
+            </p>
+            {pendingActive.length > 0 && (
+              <div className="alert" style={{ marginTop: 12, textAlign: "left" }}>
+                Sin activar todavía:{" "}
+                {pendingActive.map((s) => SPECIAL_LABELS[s.type]).join(", ")}. Si
+                todavía hay oportunidad real de usarlos, cancela y espera
+                ("Última oportunidad").
+              </div>
+            )}
+            {finishError && <div className="alert" style={{ marginTop: 12 }}>{finishError}</div>}
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setConfirmingFinish(false)}
+                disabled={finishing}
+              >
+                Cancelar
+              </button>
+              <button className="btn btn-primary" onClick={handleFinalize} disabled={finishing}>
+                {finishing ? "…" : "🏁 Sí, finalizar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
