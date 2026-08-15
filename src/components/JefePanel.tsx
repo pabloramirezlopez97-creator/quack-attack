@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Player, SpecialDuck } from "../types";
+import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
+import MeetingResolutionPanel from "./MeetingResolutionPanel";
 
 const STATUS_LABEL: Record<string, string> = {
   lobby: "Sala de espera",
@@ -17,9 +18,10 @@ interface JefePanelProps {
   players: Player[];
   ducks: Duck[];
   specialDucks: SpecialDuck[];
+  myPlayerId: string | undefined;
 }
 
-export default function JefePanel({ game, players, ducks, specialDucks }: JefePanelProps) {
+export default function JefePanel({ game, players, ducks, specialDucks, myPlayerId }: JefePanelProps) {
   const nav = useNavigate();
   const foundCount = ducks.filter((d) => d.owner_id).length;
   const specialFoundCount = specialDucks.filter((d) => d.owner_id).length;
@@ -31,6 +33,7 @@ export default function JefePanel({ game, players, ducks, specialDucks }: JefePa
 
   const exploradores = players.filter((p) => p.role === "explorador");
   const ownerName = (id: string | null) => players.find((p) => p.id === id)?.name ?? null;
+  const meeting = game.current_meeting as unknown as MeetingInfo | null;
 
   return (
     <div className="screen">
@@ -42,6 +45,15 @@ export default function JefePanel({ game, players, ducks, specialDucks }: JefePa
       </div>
 
       <div className="stack">
+        {meeting && (
+          <MeetingResolutionPanel
+            meeting={meeting}
+            players={players}
+            specialDucks={specialDucks}
+            myPlayerId={myPlayerId}
+          />
+        )}
+
         <div className="card">
           <p className="muted" style={{ marginBottom: 4 }}>
             Estado: <strong style={{ color: "var(--white)" }}>{STATUS_LABEL[game.status]}</strong>
