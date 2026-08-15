@@ -7,6 +7,7 @@ import MeetingBanner from "../components/MeetingBanner";
 import MeetingResolutionPanel from "../components/MeetingResolutionPanel";
 import BlockedOverlay from "../components/BlockedOverlay";
 import JefePanel from "../components/JefePanel";
+import Results from "./Results";
 import { SPECIAL_LABELS } from "../types";
 import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
 
@@ -160,6 +161,10 @@ export default function GamePlay() {
         </button>
       </div>
     );
+  }
+
+  if (game.status === "resultados") {
+    return <Results gameCode={game.code} players={players} />;
   }
 
   const isJefe = myPlayer?.role === "jefe";
