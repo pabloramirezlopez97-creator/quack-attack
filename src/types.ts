@@ -1,3 +1,4 @@
+// v3 — incluye MeetingInfo (revisión de Fase 3)
 export type Role = "jefe" | "explorador";
 
 export type SpecialType =
@@ -123,3 +124,24 @@ export const SPECIAL_COLORS: Record<SpecialType, string> = {
 // Especiales ACTIVOS: requieren que su dueño decida activarlos (Reunión en la Charca).
 // Dorado, Rojo y Blanco son pasivos y nunca se activan.
 export const ACTIVE_SPECIAL_TYPES: SpecialType[] = ["negro", "verde", "marron", "naranja", "azul"];
+
+// Forma de games.current_meeting cuando hay una Reunión en la Charca activa.
+export interface MeetingInfo {
+  special_type: SpecialType;
+  special_id: string;
+  player_id: string;
+  player_name: string;
+  called_at: string;
+  hint_text?: string;
+  resolution?: string;
+  blocked_player_id?: string;
+  blocked_player_name?: string;
+  blocked_until?: string;
+  pending_blanco?: {
+    blanco_special_id: string;
+    target_player_id: string;
+    target_player_name: string;
+    choice: "dorado" | "normal";
+    digit: number | null;
+  };
+}
