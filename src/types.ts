@@ -137,11 +137,4 @@ export interface MeetingInfo {
   blocked_player_id?: string;
   blocked_player_name?: string;
   blocked_until?: string;
-  pending_blanco?: {
-    blanco_special_id: string;
-    target_player_id: string;
-    target_player_name: string;
-    choice: "dorado" | "normal";
-    digit: number | null;
-  };
 }

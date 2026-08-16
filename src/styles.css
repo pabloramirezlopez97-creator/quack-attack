@@ -220,6 +220,28 @@ input { font-family: var(--font-body); }
   pointer-events: none;
 }
 
+.thief-btn {
+  appearance: none;
+  border: none;
+  background: rgba(43, 43, 51, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  color: var(--white);
+  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  font-size: 1.3rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.thief-btn:active {
+  background: #2b2b33;
+  transform: scale(0.92);
+}
+.thief-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* ---------- bloqueo del Pato Marrón ---------- */
 .blocked-overlay {
   position: fixed;
