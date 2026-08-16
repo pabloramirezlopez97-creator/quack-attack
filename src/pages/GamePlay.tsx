@@ -223,6 +223,7 @@ export default function GamePlay() {
               meeting={meeting}
               players={players}
               specialDucks={specialDucks}
+              ducks={ducks}
               myPlayerId={myPlayer?.id}
               isJefe={false}
             />
