@@ -43,12 +43,10 @@
   --radius-md: 18px;
   --radius-sm: 12px;
 
-  /* Tomato Grotesk Black: títulos, cabeceras, botones, índices/etiquetas */
+  /* Tomato Grotesk Black: títulos, cabeceras, botones, índices, números */
   --font-display: "Tomato Grotesk", system-ui, sans-serif;
-  /* Tomato Grotesk Regular: cuerpo de texto general */
+  /* Tomato Grotesk Regular: cuerpo de texto general y avisos */
   --font-body: "Tomato Grotesk", system-ui, -apple-system, sans-serif;
-  /* Oswald: SOLO números (patos, puntuaciones, código de sala) y avisos/errores */
-  --font-numeric: "Oswald", system-ui, sans-serif;
 
   color-scheme: dark;
 }
@@ -65,6 +63,7 @@ body,
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background: radial-gradient(circle at 50% -10%, #1c2133 0%, var(--ink) 55%);
   color: var(--white);
   font-family: var(--font-body);
@@ -81,7 +80,7 @@ h1, h2, h3 {
 
 p { margin: 0; line-height: 1.5; }
 .muted { color: var(--text-muted); }
-.num { font-family: var(--font-numeric); color: var(--white); font-weight: 600; }
+.num { font-family: var(--font-display); color: var(--white); font-weight: 900; }
 button { font-family: var(--font-display); font-weight: 900; cursor: pointer; }
 input { font-family: var(--font-body); }
 
@@ -155,7 +154,7 @@ input { font-family: var(--font-body); }
 .field input:focus { border-color: var(--yellow); }
 .code-input {
   text-transform: uppercase; letter-spacing: 0.35em; text-align: center;
-  font-family: var(--font-numeric); font-size: 1.5rem !important;
+  font-family: var(--font-display); font-weight: 900; font-size: 1.5rem !important;
 }
 
 /* ---------- topbar ---------- */
@@ -178,12 +177,12 @@ input { font-family: var(--font-body); }
 .alert {
   background: rgba(225,91,91,0.15); border: 1px solid var(--danger);
   color: #ffb3b3; border-radius: var(--radius-sm); padding: 12px 14px;
-  font-size: 0.9rem; width: 100%; font-family: var(--font-numeric);
+  font-size: 0.9rem; width: 100%; font-family: var(--font-body);
 }
 
 /* ---------- lobby / sala de espera ---------- */
 .game-code {
-  font-family: var(--font-numeric); font-size: 2.4rem; letter-spacing: 0.25em;
+  font-family: var(--font-display); font-weight: 900; font-size: 2.4rem; letter-spacing: 0.25em;
   background: var(--panel); border: 2px dashed var(--yellow);
   border-radius: var(--radius-md); padding: 18px 10px; width: 100%; text-align: center;
 }
@@ -216,7 +215,8 @@ input { font-family: var(--font-body); }
   margin-bottom: 8px;
 }
 .blocked-count {
-  font-family: var(--font-numeric);
+  font-family: var(--font-display);
+  font-weight: 900;
   font-size: 4rem;
   color: var(--white);
   margin: 0;
@@ -250,7 +250,7 @@ input { font-family: var(--font-body); }
 }
 .meeting-wait {
   color: var(--text-muted);
-  font-family: var(--font-numeric);
+  font-family: var(--font-body);
   font-size: 0.85rem;
   margin: 0;
 }
@@ -262,9 +262,11 @@ input { font-family: var(--font-body); }
 /* ---------- franja de Patos Especiales ---------- */
 .special-strip {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
 }
 .special-item {
   display: flex;
@@ -318,12 +320,42 @@ input { font-family: var(--font-body); }
   50% { opacity: 0.6; transform: scale(1.12); }
 }
 
-/* ---------- cuadrícula de patos ---------- */
+/* ---------- cuadrícula de patos, agrupada por decenas ---------- */
+.duck-grid-wrap {
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.decade-block {
+  width: 100%;
+}
+.decade-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.decade-divider::before,
+.decade-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
 .duck-grid {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
+  grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 6px;
   width: 100%;
+  box-sizing: border-box;
 }
 .duck-tile {
   appearance: none;
@@ -332,9 +364,9 @@ input { font-family: var(--font-body); }
   color: var(--white);
   border-radius: 8px;
   aspect-ratio: 1;
-  font-family: var(--font-numeric);
+  font-family: var(--font-display);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -422,7 +454,8 @@ input { font-family: var(--font-body); }
   pointer-events: none;
 }
 .stepper-value {
-  font-family: var(--font-numeric);
+  font-family: var(--font-display);
+  font-weight: 900;
   font-size: 1.4rem;
   min-width: 48px;
   text-align: center;
