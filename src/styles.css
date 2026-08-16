@@ -198,6 +198,28 @@ input { font-family: var(--font-body); }
 .role-pill.jefe { background: rgba(245,197,24,0.18); color: var(--yellow); }
 .role-pill.explorador { background: rgba(75,191,122,0.18); color: var(--success); }
 
+.clock-btn {
+  appearance: none;
+  border: none;
+  background: rgba(139, 94, 60, 0.18);
+  border: 2px solid rgba(139, 94, 60, 0.5);
+  color: var(--white);
+  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  font-size: 1.3rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.clock-btn:active {
+  background: #8b5e3c;
+  transform: scale(0.92);
+}
+.clock-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* ---------- bloqueo del Pato Marrón ---------- */
 .blocked-overlay {
   position: fixed;
