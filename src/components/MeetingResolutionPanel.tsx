@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
 import type { Duck, MeetingInfo, Player, SpecialDuck } from "../types";
@@ -16,8 +16,14 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [targetId, setTargetId] = useState("");
-  const [negroChoice, setNegroChoice] = useState<"dorado" | "normal">("dorado");
+  const [marronTargetId, setMarronTargetId] = useState("");
+
+  const [negroStep, setNegroStep] = useState<"choice" | "digit" | "target" | "confirm">("choice");
+  const [negroChoice, setNegroChoice] = useState<"dorado" | "normal" | null>(null);
+  const [negroDigitInput, setNegroDigitInput] = useState("");
+  const [negroDigit, setNegroDigit] = useState<number | null>(null);
+  const [negroTargetId, setNegroTargetId] = useState("");
+
   const [hintText, setHintText] = useState("");
   const [verdeOp, setVerdeOp] = useState<"comprar" | "vender">("comprar");
   const [counterpartyId, setCounterpartyId] = useState("");
@@ -29,12 +35,14 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
   const [azulToBId, setAzulToBId] = useState("");
   const [azulNewOwnerId, setAzulNewOwnerId] = useState("");
 
-  const digit = useMemo(() => Math.floor(Math.random() * 10), [meeting.special_id]);
-
   useEffect(() => {
     setError(null);
-    setTargetId("");
-    setNegroChoice("dorado");
+    setMarronTargetId("");
+    setNegroStep("choice");
+    setNegroChoice(null);
+    setNegroDigitInput("");
+    setNegroDigit(null);
+    setNegroTargetId("");
     setHintText("");
     setVerdeOp("comprar");
     setCounterpartyId("");
@@ -60,7 +68,7 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
   }
 
   // ---------- Ya resuelto: solo mostrar el resultado ----------
-  if (meeting.resolution && !meeting.pending_blanco) {
+  if (meeting.resolution) {
     return (
       <div className="card" style={{ borderColor: "var(--success)" }}>
         <p style={{ color: "var(--success)", fontWeight: 700, marginBottom: 6 }}>
@@ -72,59 +80,6 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
         <p className="muted" style={{ marginTop: 6 }}>
           El Pato Jefe cerrará la Reunión cuando corresponda.
         </p>
-      </div>
-    );
-  }
-
-  // ---------- Defensa pendiente del Pato Blanco ----------
-  if (meeting.pending_blanco) {
-    const pb = meeting.pending_blanco;
-    if (myPlayerId !== pb.target_player_id) {
-      return (
-        <div className="card">
-          <p className="muted">
-            ⚪ Esperando a que <strong style={{ color: "var(--white)" }}>{pb.target_player_name}</strong>{" "}
-            decida si usa el Pato Blanco para defenderse…
-          </p>
-        </div>
-      );
-    }
-    return (
-      <div className="card">
-        <p className="muted" style={{ marginBottom: 12 }}>
-          ⚫ Te están atacando con el Pato Negro. Tienes el Pato Blanco ⚪ — ¿lo usas para bloquear?
-        </p>
-        {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
-        <div className="modal-actions">
-          <button
-            className="btn btn-secondary"
-            disabled={submitting}
-            onClick={() =>
-              run(() =>
-                supabase.rpc("resolve_blanco_defense", {
-                  p_special_id_blanco: pb.blanco_special_id,
-                  p_use_blanco: false,
-                })
-              )
-            }
-          >
-            No bloquear
-          </button>
-          <button
-            className="btn btn-primary"
-            disabled={submitting}
-            onClick={() =>
-              run(() =>
-                supabase.rpc("resolve_blanco_defense", {
-                  p_special_id_blanco: pb.blanco_special_id,
-                  p_use_blanco: true,
-                })
-              )
-            }
-          >
-            {submitting ? "…" : "⚪ Bloquear"}
-          </button>
-        </div>
       </div>
     );
   }
@@ -180,96 +135,210 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
     );
   }
 
-  // ---------- MARRÓN ----------
+  // ---------- MARRÓN: toca el reloj → confirmar → bloquea ----------
   if (meeting.special_type === "marron") {
+    if (marronTargetId) {
+      const targetName = nameOf(marronTargetId);
+      return (
+        <div className="card">
+          <p className="muted" style={{ marginBottom: 12 }}>
+            🟤 ¿Bloquear a <strong style={{ color: "var(--white)" }}>{targetName}</strong> durante 30 segundos?
+          </p>
+          {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
+          <div className="modal-actions">
+            <button
+              className="btn btn-secondary"
+              disabled={submitting}
+              onClick={() => setMarronTargetId("")}
+            >
+              Cancelar
+            </button>
+            <button
+              className="btn btn-primary"
+              disabled={submitting}
+              onClick={() =>
+                run(() =>
+                  supabase.rpc("resolve_marron", {
+                    p_special_id: meeting.special_id,
+                    p_target_player_id: marronTargetId,
+                  })
+                )
+              }
+            >
+              {submitting ? "…" : "🟤 Confirmar bloqueo"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="card">
-        <p className="muted" style={{ marginBottom: 10 }}>🟤 Elige a quién bloquear 30 segundos:</p>
-        <div className="stack" style={{ marginBottom: 12 }}>
+        <p className="muted" style={{ marginBottom: 10 }}>
+          🟤 Toca el reloj del Explorador que quieres bloquear 30 segundos:
+        </p>
+        <div>
           {otherExplorers.map((p) => (
-            <button
-              key={p.id}
-              className={`role-card ${targetId === p.id ? "selected" : ""}`}
-              onClick={() => setTargetId(p.id)}
-            >
-              <strong>{p.name}</strong>
-            </button>
+            <div className="player-row" key={p.id}>
+              <span>🦆 {p.name}</span>
+              <button
+                className="clock-btn"
+                aria-label={`Bloquear a ${p.name} 30 segundos`}
+                onClick={() => setMarronTargetId(p.id)}
+              >
+                ⏰
+              </button>
+            </div>
           ))}
+          {otherExplorers.length === 0 && (
+            <p className="muted">No hay otros Exploradores a quien bloquear.</p>
+          )}
         </div>
-        {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
-        <button
-          className="btn btn-primary"
-          disabled={!targetId || submitting}
-          onClick={() =>
-            run(() =>
-              supabase.rpc("resolve_marron", {
-                p_special_id: meeting.special_id,
-                p_target_player_id: targetId,
-              })
-            )
-          }
-        >
-          {submitting ? "…" : "🟤 Bloquear"}
-        </button>
       </div>
     );
   }
 
-  // ---------- NEGRO ----------
+  // ---------- NEGRO: elegir → (cifra) → objetivo (sin vuelta atrás) → confirmar ----------
   if (meeting.special_type === "negro") {
-    return (
-      <div className="card">
-        <p className="muted" style={{ marginBottom: 10 }}>⚫ Elige el objetivo:</p>
-        <div className="stack" style={{ marginBottom: 14 }}>
-          {otherExplorers.map((p) => (
+    // Paso 1: elegir qué robar
+    if (negroStep === "choice") {
+      return (
+        <div className="card">
+          <p className="muted" style={{ marginBottom: 10 }}>⚫ ¿Qué roba?</p>
+          <div className="stack">
             <button
-              key={p.id}
-              className={`role-card ${targetId === p.id ? "selected" : ""}`}
-              onClick={() => setTargetId(p.id)}
+              className="role-card"
+              onClick={() => { setNegroChoice("dorado"); setNegroStep("target"); }}
             >
-              <strong>{p.name}</strong>
+              <strong>🟡 Robar el Pato Dorado</strong>
             </button>
-          ))}
-        </div>
-
-        <p className="muted" style={{ marginBottom: 10 }}>¿Qué roba?</p>
-        <div className="stack" style={{ marginBottom: 14 }}>
-          <button
-            className={`role-card ${negroChoice === "dorado" ? "selected" : ""}`}
-            onClick={() => setNegroChoice("dorado")}
-          >
-            <strong>🟡 Robar el Dorado</strong>
-          </button>
-          <button
-            className={`role-card ${negroChoice === "normal" ? "selected" : ""}`}
-            onClick={() => setNegroChoice("normal")}
-          >
-            <div>
+            <button
+              className="role-card"
+              onClick={() => { setNegroChoice("normal"); setNegroStep("digit"); }}
+            >
               <strong>Robar Patos Normales</strong>
-              <small>Cifra sorteada: {digit}</small>
-            </div>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Paso 2 (solo si roba Normales): elegir la cifra 0-9
+    if (negroStep === "digit") {
+      const digitValue = Number(negroDigitInput);
+      const digitValid =
+        negroDigitInput.trim() !== "" && Number.isInteger(digitValue) && digitValue >= 0 && digitValue <= 9;
+      return (
+        <div className="card">
+          <p className="muted" style={{ marginBottom: 10 }}>
+            Escribe una cifra del 0 al 9. Se robarán los Patos Normales que terminen en ese número:
+          </p>
+          <div className="field" style={{ marginBottom: 14 }}>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={9}
+              placeholder="Ej: 3"
+              value={negroDigitInput}
+              onChange={(e) => setNegroDigitInput(e.target.value)}
+            />
+          </div>
+          <button
+            className="btn btn-primary"
+            disabled={!digitValid}
+            onClick={() => { setNegroDigit(digitValue); setNegroStep("target"); }}
+          >
+            Siguiente
           </button>
         </div>
+      );
+    }
 
-        {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
-        <button
-          className="btn btn-primary"
-          disabled={!targetId || submitting}
-          onClick={() =>
-            run(() =>
-              supabase.rpc("negro_attack", {
-                p_special_id: meeting.special_id,
-                p_choice: negroChoice,
-                p_target_player_id: targetId,
-                p_digit: negroChoice === "normal" ? digit : null,
-              })
-            )
-          }
-        >
-          {submitting ? "…" : "⚫ Atacar"}
-        </button>
-      </div>
-    );
+    // Paso 3: elegir a quién robar — 🥷 y sin vuelta atrás
+    if (negroStep === "target") {
+      return (
+        <div className="card">
+          <p className="muted" style={{ marginBottom: 10 }}>
+            ⚫ Toca al Explorador objetivo. <strong style={{ color: "var(--danger)" }}>Ojo: no hay vuelta atrás.</strong>
+          </p>
+          <div>
+            {otherExplorers.map((p) => (
+              <div className="player-row" key={p.id}>
+                <span>🦆 {p.name}</span>
+                <button
+                  className="thief-btn"
+                  aria-label={`Robar a ${p.name}`}
+                  onClick={() => {
+                    setNegroTargetId(p.id);
+                    if (negroChoice === "dorado") {
+                      run(() =>
+                        supabase.rpc("negro_attack", {
+                          p_special_id: meeting.special_id,
+                          p_choice: "dorado",
+                          p_target_player_id: p.id,
+                          p_digit: null,
+                        })
+                      );
+                    } else {
+                      setNegroStep("confirm");
+                    }
+                  }}
+                >
+                  🥷
+                </button>
+              </div>
+            ))}
+            {otherExplorers.length === 0 && (
+              <p className="muted">No hay otros Exploradores a quien robar.</p>
+            )}
+          </div>
+          {error && <div className="alert" style={{ marginTop: 12 }}>{error}</div>}
+        </div>
+      );
+    }
+
+    // Paso 4 (solo Normales): confirmar el robo de los patos que terminan en esa cifra
+    if (negroStep === "confirm") {
+      const matching = ducks.filter(
+        (d) => d.owner_id === negroTargetId && negroDigit !== null && d.number % 10 === negroDigit
+      );
+      const targetName = nameOf(negroTargetId);
+      return (
+        <div className="card">
+          <p className="muted" style={{ marginBottom: 10 }}>
+            {targetName} tiene {matching.length} Pato(s) Normal(es) terminados en {negroDigit}:
+          </p>
+          <div className="stack" style={{ marginBottom: 14 }}>
+            {matching.map((d) => (
+              <div className="player-row" key={d.id}>
+                <span className="num">Pato {String(d.number).padStart(2, "0")}</span>
+              </div>
+            ))}
+            {matching.length === 0 && <p className="muted">Ninguno — aun así, se consumirá el Pato Negro.</p>}
+          </div>
+          {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
+          <button
+            className="btn btn-primary"
+            disabled={submitting}
+            onClick={() =>
+              run(() =>
+                supabase.rpc("negro_attack", {
+                  p_special_id: meeting.special_id,
+                  p_choice: "normal",
+                  p_target_player_id: negroTargetId,
+                  p_digit: negroDigit,
+                })
+              )
+            }
+          >
+            {submitting ? "…" : "⚫ Robar"}
+          </button>
+        </div>
+      );
+    }
+
+    return null;
   }
 
   // ---------- VERDE ----------
