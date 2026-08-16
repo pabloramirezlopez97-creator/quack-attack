@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
-import type { MeetingInfo, Player, SpecialDuck } from "../types";
+import type { Duck, MeetingInfo, Player, SpecialDuck } from "../types";
 
 interface Props {
   meeting: MeetingInfo;
   players: Player[];
   specialDucks: SpecialDuck[];
+  ducks: Duck[];
   myPlayerId: string | undefined;
   isJefe: boolean;
 }
 
-export default function MeetingResolutionPanel({ meeting, players, specialDucks, myPlayerId, isJefe }: Props) {
+export default function MeetingResolutionPanel({ meeting, players, specialDucks, ducks, myPlayerId, isJefe }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -281,10 +282,17 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
     );
     const availableSpecials = verdeOp === "comprar" ? counterpartySpecials : ownSpecials;
 
+    const myNormalCount = ducks.filter((d) => d.owner_id === myPlayerId).length;
+    const counterpartyNormalCount = counterpartyId
+      ? ducks.filter((d) => d.owner_id === counterpartyId).length
+      : null;
+    const canComprar = myNormalCount >= 3;
+    const canVenderTo = counterpartyNormalCount === null || counterpartyNormalCount >= 2;
+
     return (
       <div className="card">
         <p className="muted" style={{ marginBottom: 10 }}>🟢 ¿Comprar o vender?</p>
-        <div className="stack" style={{ marginBottom: 14 }}>
+        <div className="stack" style={{ marginBottom: 6 }}>
           <button
             className={`role-card ${verdeOp === "comprar" ? "selected" : ""}`}
             onClick={() => { setVerdeOp("comprar"); setTradedSpecialId(""); }}
@@ -299,8 +307,15 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
           </button>
         </div>
 
-        <p className="muted" style={{ marginBottom: 10 }}>Con qué jugador:</p>
-        <div className="stack" style={{ marginBottom: 14 }}>
+        {verdeOp === "comprar" && !canComprar && (
+          <div className="alert" style={{ marginBottom: 14 }}>
+            🟢 Todavía no puedes comprar: tienes {myNormalCount} Patos Normales
+            propios y hacen falta 3.
+          </div>
+        )}
+
+        <p className="muted" style={{ marginBottom: 10, marginTop: 8 }}>Con qué jugador:</p>
+        <div className="stack" style={{ marginBottom: 6 }}>
           {otherExplorers.map((p) => (
             <button
               key={p.id}
@@ -312,9 +327,17 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
           ))}
         </div>
 
-        {counterpartyId && (
+        {verdeOp === "vender" && counterpartyId && !canVenderTo && (
+          <div className="alert" style={{ marginBottom: 14 }}>
+            🟢 {players.find((p) => p.id === counterpartyId)?.name} tiene{" "}
+            {counterpartyNormalCount} Patos Normales y hacen falta 2 para
+            poder pagarte. Elige a otro jugador o espera.
+          </div>
+        )}
+
+        {counterpartyId && (verdeOp === "vender" ? canVenderTo : canComprar) && (
           <>
-            <p className="muted" style={{ marginBottom: 10 }}>
+            <p className="muted" style={{ marginBottom: 10, marginTop: 8 }}>
               {verdeOp === "comprar" ? "Qué Especial le compras:" : "Qué Especial propio vendes:"}
             </p>
             {availableSpecials.length === 0 && (
@@ -339,7 +362,12 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
         {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
         <button
           className="btn btn-primary"
-          disabled={!counterpartyId || !tradedSpecialId || submitting}
+          disabled={
+            !counterpartyId ||
+            !tradedSpecialId ||
+            submitting ||
+            (verdeOp === "comprar" ? !canComprar : !canVenderTo)
+          }
           onClick={() =>
             run(() =>
               supabase.rpc("resolve_verde", {

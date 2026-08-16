@@ -75,6 +75,7 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
             meeting={meeting}
             players={players}
             specialDucks={specialDucks}
+            ducks={ducks}
             myPlayerId={myPlayerId}
             isJefe={true}
           />
