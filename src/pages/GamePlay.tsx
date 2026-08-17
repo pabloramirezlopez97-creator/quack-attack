@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import DuckGrid from "../components/DuckGrid";
@@ -8,6 +8,7 @@ import MeetingResolutionPanel from "../components/MeetingResolutionPanel";
 import BlockedOverlay from "../components/BlockedOverlay";
 import JefePanel from "../components/JefePanel";
 import Results from "./Results";
+import { playFoundSound, playMeetingSound } from "../lib/sound";
 import { SPECIAL_LABELS } from "../types";
 import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
 
@@ -32,6 +33,7 @@ export default function GamePlay() {
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [closingMeeting, setClosingMeeting] = useState(false);
+  const lastMeetingIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!code) return;
@@ -116,6 +118,16 @@ export default function GamePlay() {
     };
   }, [code]);
 
+  // Sonido cuando aparece una Reunión nueva (para todos). Se coloca aquí, antes
+  // de cualquier "return" condicional de arriba, para no romper las reglas de hooks.
+  useEffect(() => {
+    const meetingId = (game?.current_meeting as { special_id?: string } | null)?.special_id;
+    if (!meetingId) return;
+    if (lastMeetingIdRef.current === meetingId) return;
+    lastMeetingIdRef.current = meetingId;
+    playMeetingSound();
+  }, [game?.current_meeting]);
+
   async function confirmSelection() {
     if (!selection) return;
     setSubmitting(true);
@@ -133,6 +145,9 @@ export default function GamePlay() {
     if (rpcError) {
       setActionError(rpcError.message);
       return;
+    }
+    if (selection.kind === "find_normal" || selection.kind === "find_special") {
+      playFoundSound();
     }
     setSelection(null);
   }
