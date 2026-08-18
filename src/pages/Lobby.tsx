@@ -171,7 +171,10 @@ export default function Lobby() {
             </div>
           ))}
           {players.length === 0 && (
-            <p className="muted">Todavía no hay nadie más aquí…</p>
+            <p className="muted">
+              🦆 Comparte el código de arriba con tu grupo — en cuanto se
+              unan, los verás aparecer aquí al instante.
+            </p>
           )}
         </div>
 

@@ -8,6 +8,7 @@ import MeetingResolutionPanel from "../components/MeetingResolutionPanel";
 import BlockedOverlay from "../components/BlockedOverlay";
 import JefePanel from "../components/JefePanel";
 import Results from "./Results";
+import SoundToggle from "../components/SoundToggle";
 import { playFoundSound, playMeetingSound } from "../lib/sound";
 import { SPECIAL_LABELS } from "../types";
 import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
@@ -220,6 +221,7 @@ export default function GamePlay() {
 
   return (
     <>
+      <SoundToggle />
       {meetingBanner}
       {myPlayer?.is_blocked_until && new Date(myPlayer.is_blocked_until).getTime() > Date.now() && (
         <BlockedOverlay blockedUntil={myPlayer.is_blocked_until} />
