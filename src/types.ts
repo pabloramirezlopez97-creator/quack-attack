@@ -133,6 +133,7 @@ export interface MeetingInfo {
   player_name: string;
   called_at: string;
   hint_text?: string;
+  naranja_typing?: boolean;
   resolution?: string;
   blocked_player_id?: string;
   blocked_player_name?: string;

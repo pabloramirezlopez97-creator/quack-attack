@@ -6,6 +6,7 @@ import CreateGame from "./pages/CreateGame";
 import JoinGame from "./pages/JoinGame";
 import Lobby from "./pages/Lobby";
 import GamePlay from "./pages/GamePlay";
+import ConnectionStatus from "./components/ConnectionStatus";
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -40,6 +41,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ConnectionStatus />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/crear" element={<CreateGame />} />

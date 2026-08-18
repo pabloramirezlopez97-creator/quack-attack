@@ -364,6 +364,124 @@ input { font-family: var(--font-body); }
   50% { opacity: 0.6; transform: scale(1.12); }
 }
 
+/* ---------- podio de resultados ---------- */
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 180px;
+  padding-top: 12px;
+}
+.podium-slot {
+  flex: 1;
+  max-width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  padding: 14px 8px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.podium-slot.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.podium-slot-0 {
+  order: 2;
+  height: 190px;
+  border-color: var(--yellow);
+  background: linear-gradient(180deg, rgba(245, 197, 24, 0.15), var(--panel));
+}
+.podium-slot-1 {
+  order: 1;
+  height: 150px;
+}
+.podium-slot-2 {
+  order: 3;
+  height: 120px;
+}
+.podium-medal {
+  font-size: 2rem;
+}
+.podium-name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-align: center;
+  font-size: 0.95rem;
+}
+.podium-score {
+  font-size: 0.9rem;
+}
+
+.confetti-wrap {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 80;
+}
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  opacity: 0.9;
+  animation-name: confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+@keyframes confetti-fall {
+  to {
+    top: 105%;
+    transform: translateY(0) rotate(720deg);
+    opacity: 0.3;
+  }
+}
+
+/* ---------- indicador de sin conexión ---------- */
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--danger);
+  color: white;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  z-index: 100;
+  font-family: var(--font-body);
+}
+
+/* ---------- interruptor de sonido ---------- */
+.sound-toggle {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 45;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  color: var(--white);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sound-toggle:active {
+  transform: scale(0.9);
+}
+
 /* ---------- cuadrícula de patos, agrupada por decenas ---------- */
 .duck-grid-wrap {
   width: 100%;
