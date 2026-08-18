@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
 import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
 import MeetingResolutionPanel from "./MeetingResolutionPanel";
+import SoundToggle from "./SoundToggle";
 
 const STATUS_LABEL: Record<string, string> = {
   lobby: "Sala de espera",
@@ -62,6 +63,7 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
 
   return (
     <div className="screen">
+      <SoundToggle />
       <div className="topbar">
         <button className="back-btn" onClick={() => nav("/")} aria-label="Salir de la partida">
           ←

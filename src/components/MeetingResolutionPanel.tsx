@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
 import type { Duck, MeetingInfo, Player, SpecialDuck } from "../types";
@@ -34,6 +34,7 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
   const [azulSpecialBId, setAzulSpecialBId] = useState("");
   const [azulToBId, setAzulToBId] = useState("");
   const [azulNewOwnerId, setAzulNewOwnerId] = useState("");
+  const firedRef = useRef(false);
 
   useEffect(() => {
     setError(null);
@@ -53,6 +54,7 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
     setAzulSpecialBId("");
     setAzulToBId("");
     setAzulNewOwnerId("");
+    firedRef.current = false;
   }, [meeting.special_id]);
 
   const nameOf = (id: string | null | undefined) => players.find((p) => p.id === id)?.name ?? "?";
@@ -64,7 +66,10 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
     setError(null);
     const { error: rpcError } = await call();
     setSubmitting(false);
-    if (rpcError) setError(rpcError.message);
+    if (rpcError) {
+      firedRef.current = false;
+      setError(rpcError.message);
+    }
   }
 
   // ---------- Ya resuelto: solo mostrar el resultado ----------
@@ -90,36 +95,25 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
       return (
         <div className="card">
           <p className="muted">
-            🟠 Esperando a que el Pato Jefe / Guardián te envíe una pista…
+            🟠{" "}
+            {meeting.naranja_typing
+              ? "El Pato Jefe / Guardián ya está escribiendo tu pista…"
+              : "Esperando a que el Pato Jefe / Guardián vea el aviso…"}
           </p>
         </div>
       );
     }
     return (
-      <div className="card">
-        <p className="muted" style={{ marginBottom: 10 }}>
-          🟠 Escribe una pista para <strong style={{ color: "var(--white)" }}>{meeting.player_name}</strong> (debe
-          ayudar a encontrar UN Pato Normal, nunca puede señalar un Especial):
-        </p>
-        <div className="field" style={{ marginBottom: 12 }}>
-          <input
-            type="text"
-            placeholder="Ej: Está cerca de algo azul…"
-            value={hintText}
-            onChange={(e) => setHintText(e.target.value)}
-          />
-        </div>
-        {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
-        <button
-          className="btn btn-primary"
-          disabled={!hintText.trim() || submitting}
-          onClick={() =>
-            run(() => supabase.rpc("resolve_naranja", { p_special_id: meeting.special_id, p_hint_text: hintText.trim() }))
-          }
-        >
-          {submitting ? "…" : "🟠 Enviar pista"}
-        </button>
-      </div>
+      <NaranjaJefeForm
+        meeting={meeting}
+        hintText={hintText}
+        setHintText={setHintText}
+        submitting={submitting}
+        error={error}
+        onSubmit={() =>
+          run(() => supabase.rpc("resolve_naranja", { p_special_id: meeting.special_id, p_hint_text: hintText.trim() }))
+        }
+      />
     );
   }
 
@@ -268,10 +262,13 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
                 <span>🦆 {p.name}</span>
                 <button
                   className="thief-btn"
+                  disabled={submitting}
                   aria-label={`Robar a ${p.name}`}
                   onClick={() => {
-                    setNegroTargetId(p.id);
+                    if (firedRef.current) return;
                     if (negroChoice === "dorado") {
+                      firedRef.current = true;
+                      setNegroTargetId(p.id);
                       run(() =>
                         supabase.rpc("negro_attack", {
                           p_special_id: meeting.special_id,
@@ -281,6 +278,7 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
                         })
                       );
                     } else {
+                      setNegroTargetId(p.id);
                       setNegroStep("confirm");
                     }
                   }}
@@ -594,4 +592,49 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
   }
 
   return null;
+}
+
+// Sub-componente aparte para poder usar useEffect (marcar "escribiendo") solo
+// en la pantalla del Jefe, sin romper las reglas de hooks del componente padre.
+function NaranjaJefeForm({
+  meeting,
+  hintText,
+  setHintText,
+  submitting,
+  error,
+  onSubmit,
+}: {
+  meeting: MeetingInfo;
+  hintText: string;
+  setHintText: (v: string) => void;
+  submitting: boolean;
+  error: string | null;
+  onSubmit: () => void;
+}) {
+  useEffect(() => {
+    supabase.rpc("mark_naranja_typing", { p_special_id: meeting.special_id });
+    // Solo una vez al entrar en esta pantalla.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meeting.special_id]);
+
+  return (
+    <div className="card">
+      <p className="muted" style={{ marginBottom: 10 }}>
+        🟠 Escribe una pista para <strong style={{ color: "var(--white)" }}>{meeting.player_name}</strong> (debe
+        ayudar a encontrar UN Pato Normal, nunca puede señalar un Especial):
+      </p>
+      <div className="field" style={{ marginBottom: 12 }}>
+        <input
+          type="text"
+          placeholder="Ej: Está cerca de algo azul…"
+          value={hintText}
+          onChange={(e) => setHintText(e.target.value)}
+        />
+      </div>
+      {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
+      <button className="btn btn-primary" disabled={!hintText.trim() || submitting} onClick={onSubmit}>
+        {submitting ? "…" : "🟠 Enviar pista"}
+      </button>
+    </div>
+  );
 }
