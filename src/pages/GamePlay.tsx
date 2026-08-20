@@ -39,6 +39,7 @@ export default function GamePlay() {
   useEffect(() => {
     if (!code) return;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let onlineHandler: (() => void) | null = null;
 
     async function load() {
       const { data: gameData, error: gameError } = await supabase
@@ -85,8 +86,28 @@ export default function GamePlay() {
         setSpecialDucks((data as SpecialDuck[]) ?? []);
       }
 
+      async function refreshGame() {
+        const { data } = await supabase
+          .from("games")
+          .select("*")
+          .eq("id", gameData.id)
+          .maybeSingle();
+        if (data) setGame(data as Game);
+      }
+
+      async function refreshAll() {
+        await Promise.all([refreshGame(), refreshPlayers(), refreshDucks(), refreshSpecialDucks()]);
+      }
+
       await Promise.all([refreshPlayers(), refreshDucks(), refreshSpecialDucks()]);
       setLoading(false);
+
+      // Si el WiFi se corta un momento y vuelve, el realtime puede perderse
+      // cambios ocurridos mientras estaba desconectado. Al recuperar la
+      // conexión, forzamos una recarga completa para no quedarnos con datos
+      // antiguos en pantalla.
+      window.addEventListener("online", refreshAll);
+      onlineHandler = refreshAll;
 
       channel = supabase
         .channel(`game-${gameData.id}`)
@@ -110,12 +131,16 @@ export default function GamePlay() {
           { event: "UPDATE", schema: "public", table: "games", filter: `id=eq.${gameData.id}` },
           (payload) => setGame(payload.new as Game)
         )
-        .subscribe();
+        .subscribe((status) => {
+          // Si el canal se reconecta tras un corte, también recargamos todo.
+          if (status === "SUBSCRIBED") refreshAll();
+        });
     }
 
     load();
     return () => {
       if (channel) supabase.removeChannel(channel);
+      if (onlineHandler) window.removeEventListener("online", onlineHandler);
     };
   }, [code]);
 
@@ -185,8 +210,11 @@ export default function GamePlay() {
 
   const isJefe = myPlayer?.role === "jefe";
   const meeting = game.current_meeting as unknown as MeetingInfo | null;
+  const isNaranja = meeting?.special_type === "naranja";
 
-  const meetingBanner = meeting && (
+  // El Naranja no convoca Reunión en la Charca de verdad: es un aviso privado
+  // Explorador <-> Jefe, nunca la franja pública.
+  const meetingBanner = meeting && !isNaranja && (
     <MeetingBanner
       meeting={meeting}
       isJefe={isJefe}
@@ -194,6 +222,10 @@ export default function GamePlay() {
       closing={closingMeeting}
     />
   );
+
+  // Un Naranja solo debe verse por el Jefe y por quien lo activó — nadie más.
+  const showResolutionPanel =
+    meeting && (!isNaranja || isJefe || myPlayer?.id === meeting.player_id);
 
   if (isJefe) {
     return (
@@ -234,7 +266,7 @@ export default function GamePlay() {
           <h2>Partida {game.code}</h2>
         </div>
 
-        {meeting && (
+        {showResolutionPanel && meeting && (
           <div className="stack" style={{ marginBottom: 18 }}>
             <MeetingResolutionPanel
               meeting={meeting}
@@ -243,6 +275,8 @@ export default function GamePlay() {
               ducks={ducks}
               myPlayerId={myPlayer?.id}
               isJefe={false}
+              onClose={handleCloseMeeting}
+              closing={closingMeeting}
             />
           </div>
         )}
