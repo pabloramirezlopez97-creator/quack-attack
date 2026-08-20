@@ -10,9 +10,13 @@ interface Props {
   ducks: Duck[];
   myPlayerId: string | undefined;
   isJefe: boolean;
+  onClose?: () => void;
+  closing?: boolean;
 }
 
-export default function MeetingResolutionPanel({ meeting, players, specialDucks, ducks, myPlayerId, isJefe }: Props) {
+export default function MeetingResolutionPanel({
+  meeting, players, specialDucks, ducks, myPlayerId, isJefe, onClose, closing,
+}: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,9 +86,20 @@ export default function MeetingResolutionPanel({ meeting, players, specialDucks,
         {meeting.hint_text && (
           <p className="muted">Pista: “{meeting.hint_text}”</p>
         )}
-        <p className="muted" style={{ marginTop: 6 }}>
-          El Pato Jefe cerrará la Reunión cuando corresponda.
-        </p>
+        {isJefe && onClose ? (
+          <button
+            className="btn btn-primary"
+            style={{ marginTop: 12 }}
+            onClick={onClose}
+            disabled={closing}
+          >
+            {closing ? "…" : "Cerrar aviso"}
+          </button>
+        ) : (
+          <p className="muted" style={{ marginTop: 6 }}>
+            El Pato Jefe cerrará el aviso cuando corresponda.
+          </p>
+        )}
       </div>
     );
   }
@@ -618,10 +633,13 @@ function NaranjaJefeForm({
   }, [meeting.special_id]);
 
   return (
-    <div className="card">
+    <div className="card" style={{ borderColor: "var(--yellow)" }}>
+      <p style={{ color: "var(--yellow)", fontWeight: 700, marginBottom: 10 }}>
+        🟠 El Explorador {meeting.player_name} ha encontrado el Pato Naranja.
+        Dale una pista para encontrar más patos.
+      </p>
       <p className="muted" style={{ marginBottom: 10 }}>
-        🟠 Escribe una pista para <strong style={{ color: "var(--white)" }}>{meeting.player_name}</strong> (debe
-        ayudar a encontrar UN Pato Normal, nunca puede señalar un Especial):
+        La pista debe ayudar a encontrar UN Pato Normal — nunca puede señalar un Especial:
       </p>
       <div className="field" style={{ marginBottom: 12 }}>
         <input
