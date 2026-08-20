@@ -190,6 +190,12 @@ input { font-family: var(--font-body); }
   display: flex; align-items: center; gap: 12px; padding: 10px 4px;
   border-bottom: 1px solid var(--panel-border);
 }
+.role-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .player-row:last-child { border-bottom: none; }
 .role-pill {
   font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
@@ -280,6 +286,14 @@ input { font-family: var(--font-body); }
   top: 0;
   z-index: 40;
 }
+.meeting-icon {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--yellow);
+  margin-bottom: 8px;
+}
 .meeting-title {
   font-family: var(--font-display);
   font-weight: 900;
@@ -320,6 +334,7 @@ input { font-family: var(--font-body); }
 }
 .special-tile {
   appearance: none;
+  position: relative;
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   width: 100%;
@@ -327,6 +342,8 @@ input { font-family: var(--font-body); }
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 4px;
+  overflow: hidden;
 }
 .special-tile:active {
   transform: scale(0.93);
@@ -335,18 +352,43 @@ input { font-family: var(--font-body); }
   border-color: var(--white);
   border-width: 3px;
 }
-.special-emoji {
-  font-size: 1.4rem;
+.special-duck-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+  position: relative;
+  z-index: 1;
 }
-.special-tile.found {
-  background: #14161d !important;
-  border-color: #1e222e;
+
+/* Sin encontrar: fondo blanco */
+.special-tile.unfound {
+  background: #ffffff;
+}
+
+/* Encontrado, todavía se puede usar: fondo verde */
+.special-tile.found-held {
+  background: var(--success);
   pointer-events: none;
 }
-.special-tile.found .special-emoji {
-  opacity: 0.25;
-  filter: grayscale(1);
+
+/* Ya usado / consumido: fondo rojo con diagonal */
+.special-tile.used {
+  background: var(--danger);
+  pointer-events: none;
+}
+.special-tile.used::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    135deg,
+    transparent calc(50% - 2.5px),
+    #ffffff calc(50% - 2.5px),
+    #ffffff calc(50% + 2.5px),
+    transparent calc(50% + 2.5px)
+  );
 }
 .megaphone-btn {
   appearance: none;
