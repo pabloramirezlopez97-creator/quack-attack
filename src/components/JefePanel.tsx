@@ -29,6 +29,7 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
+  const [closingMeeting, setClosingMeeting] = useState(false);
 
   const foundCount = ducks.filter((d) => d.owner_id).length;
   const specialFoundCount = specialDucks.filter((d) => d.owner_id).length;
@@ -48,6 +49,12 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
       !s.ever_activated &&
       s.owner_id
   );
+
+  async function handleCloseMeeting() {
+    setClosingMeeting(true);
+    await supabase.rpc("close_meeting", { p_code: game.code });
+    setClosingMeeting(false);
+  }
 
   async function handleFinalize() {
     setFinishing(true);
@@ -80,6 +87,8 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
             ducks={ducks}
             myPlayerId={myPlayerId}
             isJefe={true}
+            onClose={handleCloseMeeting}
+            closing={closingMeeting}
           />
         )}
 
@@ -109,8 +118,9 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
           {exploradores.length === 0 && <p className="muted">Nadie se ha unido todavía.</p>}
           {exploradores.map((p) => (
             <div className="player-row" key={p.id}>
-              <span>🦆 {p.name}</span>
-              <span className="num">{p.score} pts</span>
+              <img src="/assets/ducks/pato_explorador.png" alt="" className="role-icon" />
+              <span>{p.name}</span>
+              <span className="num" style={{ marginLeft: "auto" }}>{p.score} pts</span>
             </div>
           ))}
         </div>

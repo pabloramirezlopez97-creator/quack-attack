@@ -1,4 +1,4 @@
-import { ACTIVE_SPECIAL_TYPES, SPECIAL_COLORS, SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
+import { ACTIVE_SPECIAL_TYPES, SPECIAL_LABELS } from "../types";
 import type { SpecialDuck } from "../types";
 
 interface SpecialDuckStripProps {
@@ -28,12 +28,15 @@ export default function SpecialDuckStrip({
           <div className="special-item" key={duck.id}>
             <button
               className={`special-tile ${found ? "found" : ""} ${isMine ? "mine" : ""}`}
-              style={!found ? { backgroundColor: SPECIAL_COLORS[duck.type] } : undefined}
               disabled={found}
               onClick={() => onSelect(duck)}
               aria-label={SPECIAL_LABELS[duck.type]}
             >
-              <span className="special-emoji">{SPECIAL_EMOJI[duck.type]}</span>
+              <img
+                src={`/assets/ducks/pato_${duck.type}.png`}
+                alt=""
+                className="special-duck-img"
+              />
             </button>
 
             {canActivate && (
