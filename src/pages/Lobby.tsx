@@ -160,13 +160,15 @@ export default function Lobby() {
 
           {jefes.map((p) => (
             <div className="player-row" key={p.id}>
-              <span>🦆 {p.name}</span>
+              <img src="/assets/ducks/pato_jefe.png" alt="" className="role-icon" />
+              <span>{p.name}</span>
               <span className="role-pill jefe">Jefe</span>
             </div>
           ))}
           {exploradores.map((p) => (
             <div className="player-row" key={p.id}>
-              <span>🦆 {p.name}</span>
+              <img src="/assets/ducks/pato_explorador.png" alt="" className="role-icon" />
+              <span>{p.name}</span>
               <span className="role-pill explorador">Explorador</span>
             </div>
           ))}
