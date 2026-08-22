@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import LegalFooter from "../components/LegalFooter";
 import type { GameStatus, Role } from "../types";
 
 interface ActiveGame {
@@ -90,6 +91,8 @@ export default function Home() {
         alt=""
         className="mascot-corner"
       />
+
+      <LegalFooter />
     </div>
   );
 }

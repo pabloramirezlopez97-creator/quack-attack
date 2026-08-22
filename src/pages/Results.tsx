@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Confetti from "../components/Confetti";
+import LegalFooter from "../components/LegalFooter";
 import type { Player } from "../types";
 
 interface ResultsProps {
@@ -95,6 +96,8 @@ export default function Results({ gameCode, players }: ResultsProps) {
             🦆 Volver al inicio
           </button>
         )}
+
+        {(stage >= 3 || podium.length === 0) && <LegalFooter />}
       </div>
     </div>
   );
