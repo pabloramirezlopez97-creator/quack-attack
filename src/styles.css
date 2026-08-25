@@ -61,6 +61,19 @@ body,
   height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Red de seguridad: cualquier input por debajo de 16px dispara el zoom
+   automático de iOS al enfocarlo, y ese salto es lo que se percibe como
+   "rebote" del teclado. Nunca debe pasar, tengamos el input que tengamos. */
+input,
+select,
+textarea {
+  font-size: max(16px, 1em);
+}
+
 body {
   margin: 0;
   overflow-x: hidden;
@@ -416,6 +429,17 @@ input { font-family: var(--font-body); }
   50% { opacity: 0.6; transform: scale(1.12); }
 }
 
+/* ---------- pop al reclamar un pato (Normal o Especial) ---------- */
+@keyframes duck-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+.duck-tile.pop,
+.special-tile.pop {
+  animation: duck-pop 0.35s ease;
+}
+
 /* ---------- podio de resultados ---------- */
 .podium {
   display: flex;
@@ -680,6 +704,25 @@ input { font-family: var(--font-body); }
   border-top-color: var(--yellow); border-radius: 50%; animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- spinner de los 8 Patos Especiales ---------- */
+.special-spinner {
+  position: relative;
+  margin: 0 auto;
+}
+.special-spinner-icon {
+  position: absolute;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  animation-name: spinner-chase;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+@keyframes spinner-chase {
+  0% { opacity: 1; transform: scale(1); }
+  15% { opacity: 0.25; transform: scale(0.55); }
+  100% { opacity: 0.25; transform: scale(0.55); }
+}
 
 /* ---------- aviso legal ---------- */
 .legal-footer {
