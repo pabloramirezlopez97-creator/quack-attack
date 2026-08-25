@@ -7,6 +7,7 @@ import MeetingBanner from "../components/MeetingBanner";
 import MeetingResolutionPanel from "../components/MeetingResolutionPanel";
 import BlockedOverlay from "../components/BlockedOverlay";
 import JefePanel from "../components/JefePanel";
+import SpecialSpinner from "../components/SpecialSpinner";
 import Results from "./Results";
 import SoundToggle from "../components/SoundToggle";
 import { playFoundSound, playMeetingSound } from "../lib/sound";
@@ -188,7 +189,7 @@ export default function GamePlay() {
   if (loading) {
     return (
       <div className="screen center">
-        <div className="spinner" />
+        <SpecialSpinner />
       </div>
     );
   }
@@ -297,12 +298,18 @@ export default function GamePlay() {
         </div>
 
         <p className="muted" style={{ marginBottom: 8 }}>
-          Patos Especiales <span style={{ opacity: 0.7 }}>· toca 📣 cuando quieras activarlo</span>
+          Patos Especiales{" "}
+          <span style={{ opacity: 0.7 }}>
+            {meeting
+              ? "· espera a que el Jefe cierre el aviso actual"
+              : "· toca el megáfono cuando quieras activarlo"}
+          </span>
         </p>
         <div className="stack" style={{ marginBottom: 20 }}>
           <SpecialDuckStrip
             specialDucks={specialDucks}
             myPlayerId={myPlayer?.id}
+            blocked={!!meeting}
             onSelect={(duck) => setSelection({ kind: "find_special", duck })}
             onActivate={(duck) => setSelection({ kind: "activate_special", duck })}
           />
