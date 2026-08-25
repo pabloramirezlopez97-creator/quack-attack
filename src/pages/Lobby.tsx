@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import SpecialSpinner from "../components/SpecialSpinner";
 import type { Game, Player } from "../types";
 
 const MODE_LABEL: Record<number, string> = {
@@ -116,7 +117,7 @@ export default function Lobby() {
   if (loading) {
     return (
       <div className="screen center">
-        <div className="spinner" />
+        <SpecialSpinner />
       </div>
     );
   }
