@@ -7,6 +7,7 @@ import JoinGame from "./pages/JoinGame";
 import Lobby from "./pages/Lobby";
 import GamePlay from "./pages/GamePlay";
 import ConnectionStatus from "./components/ConnectionStatus";
+import SpecialSpinner from "./components/SpecialSpinner";
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -34,7 +35,7 @@ export default function App() {
   if (!ready) {
     return (
       <div className="screen center">
-        <div className="spinner" />
+        <SpecialSpinner />
       </div>
     );
   }
