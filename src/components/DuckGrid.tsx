@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { Duck, Player } from "../types";
 
 interface DuckGridProps {
@@ -43,25 +44,54 @@ export default function DuckGrid({ ducks, myPlayerId, onSelect }: DuckGridProps)
               </span>
             </div>
             <div className="duck-grid">
-              {group.map((duck) => {
-                const isMine = !!duck.owner_id && duck.owner_id === myPlayerId;
-                const isTaken = !!duck.owner_id && !isMine;
-                return (
-                  <button
-                    key={duck.id}
-                    className={`duck-tile ${isMine ? "mine" : ""} ${isTaken ? "taken" : ""}`}
-                    disabled={isTaken}
-                    onClick={() => onSelect(duck)}
-                  >
-                    {String(duck.number).padStart(2, "0")}
-                  </button>
-                );
-              })}
+              {group.map((duck) => (
+                <DuckTile
+                  key={duck.id}
+                  duck={duck}
+                  myPlayerId={myPlayerId}
+                  onSelect={onSelect}
+                />
+              ))}
             </div>
           </div>
         );
       })}
     </div>
+  );
+}
+
+function DuckTile({
+  duck,
+  myPlayerId,
+  onSelect,
+}: {
+  duck: Duck;
+  myPlayerId: string | undefined;
+  onSelect: (duck: Duck) => void;
+}) {
+  const isMine = !!duck.owner_id && duck.owner_id === myPlayerId;
+  const isTaken = !!duck.owner_id && !isMine;
+
+  const [popping, setPopping] = useState(false);
+  const wasMineRef = useRef(isMine);
+
+  useEffect(() => {
+    if (isMine && !wasMineRef.current) {
+      setPopping(true);
+      const t = setTimeout(() => setPopping(false), 350);
+      return () => clearTimeout(t);
+    }
+    wasMineRef.current = isMine;
+  }, [isMine]);
+
+  return (
+    <button
+      className={`duck-tile ${isMine ? "mine" : ""} ${isTaken ? "taken" : ""} ${popping ? "pop" : ""}`}
+      disabled={isTaken}
+      onClick={() => onSelect(duck)}
+    >
+      {String(duck.number).padStart(2, "0")}
+    </button>
   );
 }
 
