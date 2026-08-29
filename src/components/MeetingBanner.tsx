@@ -1,8 +1,8 @@
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
-import type { MeetingInfo } from "../types";
+import type { Meeting } from "../types";
 
 interface MeetingBannerProps {
-  meeting: MeetingInfo;
+  meeting: Meeting;
   isJefe: boolean;
   onClose: () => void;
   closing: boolean;

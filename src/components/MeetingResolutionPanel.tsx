@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
-import type { Duck, MeetingInfo, Player, SpecialDuck } from "../types";
+import type { Duck, Meeting, Player, SpecialDuck } from "../types";
 
 interface Props {
-  meeting: MeetingInfo;
+  meeting: Meeting;
   players: Player[];
   specialDucks: SpecialDuck[];
   ducks: Duck[];
@@ -619,7 +619,7 @@ function NaranjaJefeForm({
   error,
   onSubmit,
 }: {
-  meeting: MeetingInfo;
+  meeting: Meeting;
   hintText: string;
   setHintText: (v: string) => void;
   submitting: boolean;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
-import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
+import type { Duck, Game, Meeting, Player, SpecialDuck } from "../types";
 import MeetingResolutionPanel from "./MeetingResolutionPanel";
 import SoundToggle from "./SoundToggle";
 
@@ -21,15 +21,26 @@ interface JefePanelProps {
   players: Player[];
   ducks: Duck[];
   specialDucks: SpecialDuck[];
+  meetings: Meeting[];
+  onCloseMeeting: (meetingId: string) => void;
+  closingMeetingId: string | null;
   myPlayerId: string | undefined;
 }
 
-export default function JefePanel({ game, players, ducks, specialDucks, myPlayerId }: JefePanelProps) {
+export default function JefePanel({
+  game,
+  players,
+  ducks,
+  specialDucks,
+  meetings,
+  onCloseMeeting,
+  closingMeetingId,
+  myPlayerId,
+}: JefePanelProps) {
   const nav = useNavigate();
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
-  const [closingMeeting, setClosingMeeting] = useState(false);
 
   const foundCount = ducks.filter((d) => d.owner_id).length;
   const specialFoundCount = specialDucks.filter((d) => d.owner_id).length;
@@ -41,7 +52,6 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
 
   const exploradores = players.filter((p) => p.role === "explorador");
   const ownerName = (id: string | null) => players.find((p) => p.id === id)?.name ?? null;
-  const meeting = game.current_meeting as unknown as MeetingInfo | null;
 
   const pendingActive = specialDucks.filter(
     (s) =>
@@ -49,12 +59,6 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
       !s.ever_activated &&
       s.owner_id
   );
-
-  async function handleCloseMeeting() {
-    setClosingMeeting(true);
-    await supabase.rpc("close_meeting", { p_code: game.code });
-    setClosingMeeting(false);
-  }
 
   async function handleFinalize() {
     setFinishing(true);
@@ -79,18 +83,27 @@ export default function JefePanel({ game, players, ducks, specialDucks, myPlayer
       </div>
 
       <div className="stack">
-        {meeting && (
+        {meetings.length > 0 && (
+          <p className="muted" style={{ marginTop: -6 }}>
+            {meetings.length === 1
+              ? "1 aviso pendiente de gestionar:"
+              : `${meetings.length} avisos pendientes de gestionar:`}
+          </p>
+        )}
+
+        {meetings.map((m) => (
           <MeetingResolutionPanel
-            meeting={meeting}
+            key={m.id}
+            meeting={m}
             players={players}
             specialDucks={specialDucks}
             ducks={ducks}
             myPlayerId={myPlayerId}
             isJefe={true}
-            onClose={handleCloseMeeting}
-            closing={closingMeeting}
+            onClose={() => onCloseMeeting(m.id)}
+            closing={closingMeetingId === m.id}
           />
-        )}
+        ))}
 
         <div className="card">
           <p className="muted" style={{ marginBottom: 4 }}>
