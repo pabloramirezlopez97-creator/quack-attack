@@ -12,7 +12,7 @@ import Results from "./Results";
 import SoundToggle from "../components/SoundToggle";
 import { playFoundSound, playMeetingSound } from "../lib/sound";
 import { SPECIAL_LABELS } from "../types";
-import type { Duck, Game, MeetingInfo, Player, SpecialDuck } from "../types";
+import type { Duck, Game, Meeting, Player, SpecialDuck } from "../types";
 
 type Selection =
   | { kind: "find_normal"; duck: Duck }
@@ -27,6 +27,7 @@ export default function GamePlay() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [ducks, setDucks] = useState<Duck[]>([]);
   const [specialDucks, setSpecialDucks] = useState<SpecialDuck[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +35,8 @@ export default function GamePlay() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [closingMeeting, setClosingMeeting] = useState(false);
-  const lastMeetingIdRef = useRef<string | null>(null);
+  const [closingMeetingId, setClosingMeetingId] = useState<string | null>(null);
+  const seenMeetingIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!code) return;
@@ -87,6 +88,22 @@ export default function GamePlay() {
         setSpecialDucks((data as SpecialDuck[]) ?? []);
       }
 
+      async function refreshMeetings() {
+        const { data } = await supabase
+          .from("meetings")
+          .select("*")
+          .eq("game_id", gameData.id)
+          .order("created_at", { ascending: true });
+        const list = (data as Meeting[]) ?? [];
+        setMeetings(list);
+        for (const m of list) {
+          if (!seenMeetingIds.current.has(m.id)) {
+            seenMeetingIds.current.add(m.id);
+            playMeetingSound();
+          }
+        }
+      }
+
       async function refreshGame() {
         const { data } = await supabase
           .from("games")
@@ -97,16 +114,28 @@ export default function GamePlay() {
       }
 
       async function refreshAll() {
-        await Promise.all([refreshGame(), refreshPlayers(), refreshDucks(), refreshSpecialDucks()]);
+        await Promise.all([
+          refreshGame(),
+          refreshPlayers(),
+          refreshDucks(),
+          refreshSpecialDucks(),
+          refreshMeetings(),
+        ]);
       }
+
+      // Primera carga: no debe sonar por Reuniones que ya estaban ahí antes de entrar.
+      const { data: initialMeetings } = await supabase
+        .from("meetings")
+        .select("*")
+        .eq("game_id", gameData.id)
+        .order("created_at", { ascending: true });
+      const initialList = (initialMeetings as Meeting[]) ?? [];
+      initialList.forEach((m) => seenMeetingIds.current.add(m.id));
+      setMeetings(initialList);
 
       await Promise.all([refreshPlayers(), refreshDucks(), refreshSpecialDucks()]);
       setLoading(false);
 
-      // Si el WiFi se corta un momento y vuelve, el realtime puede perderse
-      // cambios ocurridos mientras estaba desconectado. Al recuperar la
-      // conexión, forzamos una recarga completa para no quedarnos con datos
-      // antiguos en pantalla.
       window.addEventListener("online", refreshAll);
       onlineHandler = refreshAll;
 
@@ -129,11 +158,15 @@ export default function GamePlay() {
         )
         .on(
           "postgres_changes",
+          { event: "*", schema: "public", table: "meetings", filter: `game_id=eq.${gameData.id}` },
+          refreshMeetings
+        )
+        .on(
+          "postgres_changes",
           { event: "UPDATE", schema: "public", table: "games", filter: `id=eq.${gameData.id}` },
           (payload) => setGame(payload.new as Game)
         )
         .subscribe((status) => {
-          // Si el canal se reconecta tras un corte, también recargamos todo.
           if (status === "SUBSCRIBED") refreshAll();
         });
     }
@@ -144,16 +177,6 @@ export default function GamePlay() {
       if (onlineHandler) window.removeEventListener("online", onlineHandler);
     };
   }, [code]);
-
-  // Sonido cuando aparece una Reunión nueva (para todos). Se coloca aquí, antes
-  // de cualquier "return" condicional de arriba, para no romper las reglas de hooks.
-  useEffect(() => {
-    const meetingId = (game?.current_meeting as { special_id?: string } | null)?.special_id;
-    if (!meetingId) return;
-    if (lastMeetingIdRef.current === meetingId) return;
-    lastMeetingIdRef.current = meetingId;
-    playMeetingSound();
-  }, [game?.current_meeting]);
 
   async function confirmSelection() {
     if (!selection) return;
@@ -179,11 +202,10 @@ export default function GamePlay() {
     setSelection(null);
   }
 
-  async function handleCloseMeeting() {
-    if (!code) return;
-    setClosingMeeting(true);
-    await supabase.rpc("close_meeting", { p_code: code });
-    setClosingMeeting(false);
+  async function handleCloseMeeting(meetingId: string) {
+    setClosingMeetingId(meetingId);
+    await supabase.rpc("close_meeting", { p_meeting_id: meetingId });
+    setClosingMeetingId(null);
   }
 
   if (loading) {
@@ -210,33 +232,40 @@ export default function GamePlay() {
   }
 
   const isJefe = myPlayer?.role === "jefe";
-  const meeting = game.current_meeting as unknown as MeetingInfo | null;
-  const isNaranja = meeting?.special_type === "naranja";
 
-  // El Naranja no convoca Reunión en la Charca de verdad: es un aviso privado
-  // Explorador <-> Jefe, nunca la franja pública.
-  const meetingBanner = meeting && !isNaranja && (
-    <MeetingBanner
-      meeting={meeting}
-      isJefe={isJefe}
-      onClose={handleCloseMeeting}
-      closing={closingMeeting}
-    />
-  );
+  const publicMeetings = meetings.filter((m) => m.special_type !== "naranja");
 
-  // Un Naranja solo debe verse por el Jefe y por quien lo activó — nadie más.
-  const showResolutionPanel =
-    meeting && (!isNaranja || isJefe || myPlayer?.id === meeting.player_id);
+  const visibleMeetingsForMe = meetings.filter((m) => {
+    if (m.special_type !== "naranja") return true;
+    return isJefe || myPlayer?.id === m.player_id;
+  });
+
+  const anyMeetingPending = meetings.length > 0;
 
   if (isJefe) {
     return (
       <>
-        {meetingBanner}
+        {publicMeetings.length > 0 && (
+          <div className="meetings-stack">
+            {publicMeetings.map((m) => (
+              <MeetingBanner
+                key={m.id}
+                meeting={m}
+                isJefe={true}
+                onClose={() => handleCloseMeeting(m.id)}
+                closing={closingMeetingId === m.id}
+              />
+            ))}
+          </div>
+        )}
         <JefePanel
           game={game}
           players={players}
           ducks={ducks}
           specialDucks={specialDucks}
+          meetings={visibleMeetingsForMe}
+          onCloseMeeting={handleCloseMeeting}
+          closingMeetingId={closingMeetingId}
           myPlayerId={myPlayer?.id}
         />
       </>
@@ -255,7 +284,19 @@ export default function GamePlay() {
   return (
     <>
       <SoundToggle />
-      {meetingBanner}
+      {publicMeetings.length > 0 && (
+        <div className="meetings-stack">
+          {publicMeetings.map((m) => (
+            <MeetingBanner
+              key={m.id}
+              meeting={m}
+              isJefe={false}
+              onClose={() => handleCloseMeeting(m.id)}
+              closing={closingMeetingId === m.id}
+            />
+          ))}
+        </div>
+      )}
       {myPlayer?.is_blocked_until && new Date(myPlayer.is_blocked_until).getTime() > Date.now() && (
         <BlockedOverlay blockedUntil={myPlayer.is_blocked_until} />
       )}
@@ -267,18 +308,21 @@ export default function GamePlay() {
           <h2>Partida {game.code}</h2>
         </div>
 
-        {showResolutionPanel && meeting && (
-          <div className="stack" style={{ marginBottom: 18 }}>
-            <MeetingResolutionPanel
-              meeting={meeting}
-              players={players}
-              specialDucks={specialDucks}
-              ducks={ducks}
-              myPlayerId={myPlayer?.id}
-              isJefe={false}
-              onClose={handleCloseMeeting}
-              closing={closingMeeting}
-            />
+        {visibleMeetingsForMe.length > 0 && (
+          <div className="stack" style={{ marginBottom: 18, gap: 12 }}>
+            {visibleMeetingsForMe.map((m) => (
+              <MeetingResolutionPanel
+                key={m.id}
+                meeting={m}
+                players={players}
+                specialDucks={specialDucks}
+                ducks={ducks}
+                myPlayerId={myPlayer?.id}
+                isJefe={false}
+                onClose={() => handleCloseMeeting(m.id)}
+                closing={closingMeetingId === m.id}
+              />
+            ))}
           </div>
         )}
 
@@ -300,8 +344,8 @@ export default function GamePlay() {
         <p className="muted" style={{ marginBottom: 8 }}>
           Patos Especiales{" "}
           <span style={{ opacity: 0.7 }}>
-            {meeting
-              ? "· espera a que el Jefe cierre el aviso actual"
+            {anyMeetingPending
+              ? "· espera a que el Jefe cierre los avisos pendientes"
               : "· toca el megáfono cuando quieras activarlo"}
           </span>
         </p>
@@ -309,7 +353,7 @@ export default function GamePlay() {
           <SpecialDuckStrip
             specialDucks={specialDucks}
             myPlayerId={myPlayer?.id}
-            blocked={!!meeting}
+            blocked={anyMeetingPending}
             onSelect={(duck) => setSelection({ kind: "find_special", duck })}
             onActivate={(duck) => setSelection({ kind: "activate_special", duck })}
           />
