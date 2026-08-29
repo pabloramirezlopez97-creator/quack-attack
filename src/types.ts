@@ -125,17 +125,21 @@ export const SPECIAL_COLORS: Record<SpecialType, string> = {
 // Dorado, Rojo y Blanco son pasivos y nunca se activan.
 export const ACTIVE_SPECIAL_TYPES: SpecialType[] = ["negro", "verde", "marron", "naranja", "azul"];
 
-// Forma de games.current_meeting cuando hay una Reunión en la Charca activa.
-export interface MeetingInfo {
+// Una fila de la tabla `meetings`. Cada Reunión en la Charca es independiente:
+// puede haber varias a la vez, cada una con su propio ciclo de vida.
+export interface Meeting {
+  id: string;
+  game_id: string;
   special_type: SpecialType;
   special_id: string;
   player_id: string;
   player_name: string;
-  called_at: string;
-  hint_text?: string;
-  naranja_typing?: boolean;
-  resolution?: string;
-  blocked_player_id?: string;
-  blocked_player_name?: string;
-  blocked_until?: string;
+  resolution: string | null;
+  hint_text: string | null;
+  blocked_player_id: string | null;
+  blocked_player_name: string | null;
+  blocked_until: string | null;
+  naranja_typing: boolean;
+  created_at: string;
 }
+

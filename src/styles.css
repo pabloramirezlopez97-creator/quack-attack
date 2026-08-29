@@ -290,14 +290,20 @@ input { font-family: var(--font-body); }
 }
 
 /* ---------- Reunión en la Charca ---------- */
+.meetings-stack {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  overflow-y: auto;
+}
 .meeting-banner {
   background: linear-gradient(180deg, #2a2410, var(--panel));
   border-bottom: 3px solid var(--yellow);
   padding: 18px 20px;
   text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 40;
 }
 .meeting-icon {
   width: 56px;
