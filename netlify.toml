@@ -1,8 +1,18 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
+command = "npm run build"
+publish = "dist"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+from = "/manual"
+to = "/downloads/manual.pdf"
+status = 302
+
+[[redirects]]
+from = "/registro"
+to = "/downloads/registro.pdf"
+status = 302
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
