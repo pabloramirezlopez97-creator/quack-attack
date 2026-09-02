@@ -17,6 +17,10 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false;
 
+    // Limpieza oportunista: borra partidas terminadas hace más de 1 hora.
+    // No hace falta esperar respuesta, es solo mantenimiento en segundo plano.
+    supabase.rpc("cleanup_old_games");
+
     async function checkActiveGame() {
       const { data: userData } = await supabase.auth.getUser();
       const myId = userData.user?.id;
@@ -34,7 +38,8 @@ export default function Home() {
 
       // games viene como objeto embebido (relación players -> games)
       const game = data.games as unknown as { code: string; status: GameStatus } | null;
-      if (game) {
+      // Una partida ya terminada (con podio mostrado) nunca se ofrece para "continuar".
+      if (game && game.status !== "resultados") {
         setActiveGame({ code: game.code, status: game.status, role: data.role as Role });
       }
     }
