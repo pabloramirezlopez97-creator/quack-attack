@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import SpecialSpinner from "../components/SpecialSpinner";
+import FloatingDucks from "../components/FloatingDucks";
 import type { Game, Player } from "../types";
 
 const MODE_LABEL: Record<number, string> = {
@@ -138,7 +139,9 @@ export default function Lobby() {
   const isJefe = myPlayer?.role === "jefe";
 
   return (
-    <div className="screen">
+    <div className="screen screen--lobby">
+      <FloatingDucks />
+
       <div className="topbar">
         <button className="back-btn" onClick={() => nav("/")} aria-label="Salir">
           ←
