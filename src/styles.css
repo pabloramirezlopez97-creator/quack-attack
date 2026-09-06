@@ -780,3 +780,50 @@ input { font-family: var(--font-body); }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ---------- patos flotantes de fondo (Sala de Espera) ---------- */
+.screen--lobby {
+  position: relative;
+  overflow: hidden;
+}
+.screen--lobby > .topbar,
+.screen--lobby > .stack {
+  position: relative;
+  z-index: 1;
+}
+.floating-ducks {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none; /* nunca deben interceptar toques ni clics */
+  z-index: 0;
+}
+.floating-duck {
+  position: absolute;
+  bottom: -60px;
+  opacity: 0;
+  object-fit: contain;
+  animation-name: duck-float;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+@keyframes duck-float {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  12% {
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(var(--drift, 0px), -140px) rotate(4deg);
+  }
+  88% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--drift, 0px) * 1.6), -260px) rotate(-4deg);
+  }
+}
