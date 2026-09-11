@@ -289,7 +289,7 @@ input { font-family: var(--font-body); }
   margin-top: 8px;
 }
 
-/* ---------- Reunión en la Charca ---------- */
+/* ---------- Reunión en el Estanque ---------- */
 .meetings-stack {
   position: sticky;
   top: 0;
@@ -423,6 +423,10 @@ input { font-family: var(--font-body); }
 }
 .megaphone-btn:active {
   transform: scale(0.85);
+}
+.megaphone-placeholder {
+  visibility: hidden;
+  animation: none;
 }
 .megaphone-img {
   width: 100%;
@@ -649,6 +653,7 @@ input { font-family: var(--font-body); }
   width: 100%;
   max-width: 380px;
   text-align: center;
+  position: relative;
 }
 .modal-card h3 {
   font-size: 1.2rem;
@@ -661,6 +666,100 @@ input { font-family: var(--font-body); }
 }
 .modal-actions .btn {
   flex: 1;
+}
+
+/* ---------- ventana de información de un Pato Especial ---------- */
+.modal-card.info-card {
+  text-align: left;
+  position: relative;
+  max-width: 420px;
+}
+.modal-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--white);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-close-btn:active {
+  transform: scale(0.9);
+}
+.info-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-right: 30px;
+}
+.info-card-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  flex-shrink: 0;
+}
+.info-card-body {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.info-card-body p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+.info-card-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- botón "info" dentro del modal de selección (Explorador) ---------- */
+.modal-info-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  appearance: none;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+.modal-info-btn:active {
+  transform: scale(0.93);
+}
+
+/* ---------- fila de Pato Especial pulsable en el panel del Jefe ---------- */
+.special-row-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.special-row-btn:active {
+  opacity: 0.75;
+}
+.special-row-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 /* ---------- stepper (selector +/-) ---------- */
