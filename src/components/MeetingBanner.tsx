@@ -12,16 +12,17 @@ export default function MeetingBanner({ meeting, isJefe, onClose, closing }: Mee
   return (
     <div className="meeting-banner">
       <img
-        src="/assets/branding/reunion_icon.jpg"
+        src="/assets/branding/reunion icon.PNG"
         alt=""
         className="meeting-icon"
       />
       <p className="meeting-title">
-        {SPECIAL_EMOJI[meeting.special_type]} ¡REUNIÓN EN LA CHARCA!
+        {SPECIAL_EMOJI[meeting.special_type]} ¡REUNIÓN EN EL ESTANQUE!
       </p>
       <p className="meeting-body">
         <strong>{meeting.player_name}</strong> ha activado el{" "}
-        {SPECIAL_LABELS[meeting.special_type]}. Reuníos junto al Pato Jefe.
+        {SPECIAL_LABELS[meeting.special_type]} y convoca la Reunión en el
+        Estanque. Acudid junto al Pato Jefe.
       </p>
 
       {meeting.hint_text && (
@@ -32,10 +33,10 @@ export default function MeetingBanner({ meeting, isJefe, onClose, closing }: Mee
 
       {isJefe ? (
         <button className="btn btn-primary" onClick={onClose} disabled={closing}>
-          {closing ? "…" : "Cerrar Reunión"}
+          {closing ? "…" : "Cerrar Reunión en el Estanque"}
         </button>
       ) : (
-        <p className="meeting-wait">Esperando a que el Pato Jefe cierre la reunión…</p>
+        <p className="meeting-wait">Esperando a que el Pato Jefe cierre la Reunión en el Estanque…</p>
       )}
     </div>
   );

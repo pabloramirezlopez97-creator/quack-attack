@@ -20,7 +20,7 @@ export default function SpecialSpinner({ size = 84 }: SpecialSpinnerProps) {
         return (
           <img
             key={type}
-            src={`/assets/ducks/pato_${type}.png`}
+            src={`/assets/ducks/pato ${type}.png`}
             alt=""
             className="special-spinner-icon"
             style={{

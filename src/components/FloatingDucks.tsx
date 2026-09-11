@@ -3,16 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 // Las 10 imágenes de pato que ya existen en el proyecto (8 Especiales + Explorador + Jefe).
 // Se reutilizan tal cual, sin generar assets nuevos.
 const DUCK_IMAGES = [
-  '/assets/ducks/pato_dorado.png',
-  '/assets/ducks/pato_rojo.png',
-  '/assets/ducks/pato_negro.png',
-  '/assets/ducks/pato_blanco.png',
-  '/assets/ducks/pato_azul.png',
-  '/assets/ducks/pato_marron.png',
-  '/assets/ducks/pato_verde.png',
-  '/assets/ducks/pato_naranja.png',
-  '/assets/ducks/pato_explorador.png',
-  '/assets/ducks/pato_jefe.png',
+  '/assets/ducks/pato dorado.png',
+  '/assets/ducks/pato rojo.png',
+  '/assets/ducks/pato negro.png',
+  '/assets/ducks/pato blanco.png',
+  '/assets/ducks/pato azul.png',
+  '/assets/ducks/pato marron.png',
+  '/assets/ducks/pato verde.png',
+  '/assets/ducks/pato naranja.png',
+  '/assets/ducks/pato explorador.png',
+  '/assets/ducks/pato jefe.png',
 ];
 
 interface FloatingDuck {

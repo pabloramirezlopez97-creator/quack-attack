@@ -75,26 +75,29 @@ function SpecialTile({
         aria-label={SPECIAL_LABELS[duck.type]}
       >
         <img
-          src={`/assets/ducks/pato_${duck.type}.png`}
+          src={`/assets/ducks/pato ${duck.type}.png`}
           alt=""
           className="special-duck-img"
         />
       </button>
 
-      {canActivate &&
-        (blocked ? (
-          <div className="megaphone-btn" aria-label="Espera a que el Jefe cierre el aviso actual">
-            <img src="/assets/branding/megafono_bloqueado.png" alt="" className="megaphone-img" />
+      {canActivate ? (
+        blocked ? (
+          <div className="megaphone-btn" aria-label="Espera a que el Jefe cierre la Reunión en el Estanque">
+            <img src="/assets/branding/megafono bloqueado.png" alt="" className="megaphone-img" />
           </div>
         ) : (
           <button
             className="megaphone-btn"
             onClick={() => onActivate(duck)}
-            aria-label={`Activar ${SPECIAL_LABELS[duck.type]} y convocar Reunión en la Charca`}
+            aria-label={`Activar ${SPECIAL_LABELS[duck.type]} y convocar la Reunión en el Estanque`}
           >
-            <img src="/assets/branding/megafono_activo.png" alt="" className="megaphone-img" />
+            <img src="/assets/branding/megafono activo.png" alt="" className="megaphone-img" />
           </button>
-        ))}
+        )
+      ) : (
+        <div className="megaphone-btn megaphone-placeholder" aria-hidden="true" />
+      )}
     </div>
   );
 }

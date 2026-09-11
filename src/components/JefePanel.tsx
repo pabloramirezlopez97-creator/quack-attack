@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { SPECIAL_EMOJI, SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Meeting, Player, SpecialDuck } from "../types";
+import { SPECIAL_IMAGE, SPECIAL_LABELS } from "../types";
+import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType } from "../types";
 import MeetingResolutionPanel from "./MeetingResolutionPanel";
 import SoundToggle from "./SoundToggle";
+import SpecialInfoModal from "./SpecialInfoModal";
 
 const STATUS_LABEL: Record<string, string> = {
   lobby: "Sala de espera",
   preparacion: "Preparación",
   en_curso: "Búsqueda en curso",
-  reunion: "Reunión en la Charca",
+  reunion: "Reunión en el Estanque",
   finalizacion: "Finalizando",
   recuento: "Recuento",
   resultados: "Resultados",
@@ -41,6 +42,7 @@ export default function JefePanel({
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
+  const [infoType, setInfoType] = useState<SpecialType | null>(null);
 
   const foundCount = ducks.filter((d) => d.owner_id).length;
   const specialFoundCount = specialDucks.filter((d) => d.owner_id).length;
@@ -86,8 +88,8 @@ export default function JefePanel({
         {meetings.length > 0 && (
           <p className="muted" style={{ marginTop: -6 }}>
             {meetings.length === 1
-              ? "1 aviso pendiente de gestionar:"
-              : `${meetings.length} avisos pendientes de gestionar:`}
+              ? "1 Reunión en el Estanque pendiente de gestionar:"
+              : `${meetings.length} Reuniones en el Estanque pendientes de gestionar:`}
           </p>
         )}
 
@@ -131,7 +133,7 @@ export default function JefePanel({
           {exploradores.length === 0 && <p className="muted">Nadie se ha unido todavía.</p>}
           {exploradores.map((p) => (
             <div className="player-row" key={p.id}>
-              <img src="/assets/ducks/pato_explorador.png" alt="" className="role-icon" />
+              <img src="/assets/ducks/pato explorador.png" alt="" className="role-icon" />
               <span>{p.name}</span>
               <span className="num" style={{ marginLeft: "auto" }}>{p.score} pts</span>
             </div>
@@ -147,9 +149,14 @@ export default function JefePanel({
             .sort((a, b) => a.type.localeCompare(b.type))
             .map((s) => (
               <div className="player-row" key={s.id}>
-                <span>
-                  {SPECIAL_EMOJI[s.type]} {SPECIAL_LABELS[s.type]}
-                </span>
+                <button
+                  className="special-row-btn"
+                  onClick={() => setInfoType(s.type)}
+                  aria-label={`Ver la habilidad de ${SPECIAL_LABELS[s.type]}`}
+                >
+                  <img src={SPECIAL_IMAGE[s.type]} alt="" className="special-row-icon" />
+                  <span>{SPECIAL_LABELS[s.type]}</span>
+                </button>
                 <span className="muted" style={{ marginLeft: "auto" }}>
                   {s.owner_id ? `Encontrado · ${ownerName(s.owner_id)}` : "Escondido"}
                 </span>
@@ -194,6 +201,7 @@ export default function JefePanel({
           </div>
         </div>
       )}
+      {infoType && <SpecialInfoModal type={infoType} onClose={() => setInfoType(null)} />}
     </div>
   );
 }

@@ -93,11 +93,11 @@ export default function MeetingResolutionPanel({
             onClick={onClose}
             disabled={closing}
           >
-            {closing ? "…" : "Cerrar aviso"}
+            {closing ? "…" : "Cerrar Reunión en el Estanque"}
           </button>
         ) : (
           <p className="muted" style={{ marginTop: 6 }}>
-            El Pato Jefe cerrará el aviso cuando corresponda.
+            El Pato Jefe cerrará la Reunión en el Estanque cuando corresponda.
           </p>
         )}
       </div>
@@ -113,7 +113,7 @@ export default function MeetingResolutionPanel({
             🟠{" "}
             {meeting.naranja_typing
               ? "El Pato Jefe / Guardián ya está escribiendo tu pista…"
-              : "Esperando a que el Pato Jefe / Guardián vea el aviso…"}
+              : "Esperando a que el Pato Jefe / Guardián vea la Reunión en el Estanque…"}
           </p>
         </div>
       );
