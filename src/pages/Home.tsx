@@ -92,7 +92,7 @@ export default function Home() {
       </div>
 
       <img
-        src="/assets/ducks/pato_explorador.png"
+        src="/assets/ducks/pato explorador.png"
         alt=""
         className="mascot-corner"
       />

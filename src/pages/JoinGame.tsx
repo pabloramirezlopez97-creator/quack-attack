@@ -80,7 +80,7 @@ export default function JoinGame() {
           className={`role-card ${role === "explorador" ? "selected" : ""}`}
           onClick={() => setRole("explorador")}
         >
-          <img src="/assets/ducks/pato_explorador.png" alt="" />
+          <img src="/assets/ducks/pato explorador.png" alt="" />
           <div>
             <strong>Pato Explorador</strong>
             <small>Buscas patos y sumas puntos</small>
@@ -91,7 +91,7 @@ export default function JoinGame() {
           className={`role-card ${role === "jefe" ? "selected" : ""}`}
           onClick={() => setRole("jefe")}
         >
-          <img src="/assets/ducks/pato_jefe.png" alt="" />
+          <img src="/assets/ducks/pato jefe.png" alt="" />
           <div>
             <strong>Pato Jefe / Guardián</strong>
             <small>Controlas y supervisas la partida</small>

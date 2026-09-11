@@ -10,12 +10,14 @@ import JefePanel from "../components/JefePanel";
 import SpecialSpinner from "../components/SpecialSpinner";
 import Results from "./Results";
 import SoundToggle from "../components/SoundToggle";
+import SpecialInfoModal from "../components/SpecialInfoModal";
 import { playFoundSound, playMeetingSound } from "../lib/sound";
 import { SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Meeting, Player, SpecialDuck } from "../types";
+import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType } from "../types";
 
 type Selection =
   | { kind: "find_normal"; duck: Duck }
+  | { kind: "unclaim_normal"; duck: Duck }
   | { kind: "find_special"; duck: SpecialDuck }
   | { kind: "activate_special"; duck: SpecialDuck };
 
@@ -33,6 +35,7 @@ export default function GamePlay() {
   const [error, setError] = useState<string | null>(null);
 
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [infoType, setInfoType] = useState<SpecialType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [closingMeetingId, setClosingMeetingId] = useState<string | null>(null);
@@ -89,11 +92,14 @@ export default function GamePlay() {
       }
 
       async function refreshMeetings() {
-        const { data } = await supabase
+        const { data, error: meetingsError } = await supabase
           .from("meetings")
           .select("*")
           .eq("game_id", gameData.id)
-          .order("created_at", { ascending: true });
+          .order("called_at", { ascending: true });
+        if (meetingsError) {
+          console.error("Error cargando Reuniones:", meetingsError.message);
+        }
         const list = (data as Meeting[]) ?? [];
         setMeetings(list);
         for (const m of list) {
@@ -124,11 +130,14 @@ export default function GamePlay() {
       }
 
       // Primera carga: no debe sonar por Reuniones que ya estaban ahí antes de entrar.
-      const { data: initialMeetings } = await supabase
+      const { data: initialMeetings, error: initialMeetingsError } = await supabase
         .from("meetings")
         .select("*")
         .eq("game_id", gameData.id)
-        .order("created_at", { ascending: true });
+        .order("called_at", { ascending: true });
+      if (initialMeetingsError) {
+        console.error("Error cargando Reuniones iniciales:", initialMeetingsError.message);
+      }
       const initialList = (initialMeetings as Meeting[]) ?? [];
       initialList.forEach((m) => seenMeetingIds.current.add(m.id));
       setMeetings(initialList);
@@ -186,6 +195,8 @@ export default function GamePlay() {
     const rpc =
       selection.kind === "find_normal"
         ? supabase.rpc("claim_duck", { p_duck_id: selection.duck.id })
+        : selection.kind === "unclaim_normal"
+        ? supabase.rpc("release_duck", { p_duck_id: selection.duck.id })
         : selection.kind === "find_special"
         ? supabase.rpc("claim_special_duck", { p_special_id: selection.duck.id })
         : supabase.rpc("activate_special", { p_special_id: selection.duck.id });
@@ -345,7 +356,7 @@ export default function GamePlay() {
           Patos Especiales{" "}
           <span style={{ opacity: 0.7 }}>
             {anyMeetingPending
-              ? "· espera a que el Jefe cierre los avisos pendientes"
+              ? "· espera a que el Jefe cierre las Reuniones en el Estanque pendientes"
               : "· toca el megáfono cuando quieras activarlo"}
           </span>
         </p>
@@ -363,23 +374,44 @@ export default function GamePlay() {
         <DuckGrid
           ducks={ducks}
           myPlayerId={myPlayer?.id}
-          onSelect={(duck) => setSelection({ kind: "find_normal", duck })}
+          onSelect={(duck) =>
+            setSelection({
+              kind: duck.owner_id === myPlayer?.id ? "unclaim_normal" : "find_normal",
+              duck,
+            })
+          }
         />
 
         {selection && (
           <div className="modal-backdrop" onClick={() => !submitting && setSelection(null)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              {(selection.kind === "find_special" || selection.kind === "activate_special") && (
+                <button
+                  className="modal-info-btn"
+                  onClick={() => setInfoType(selection.duck.type)}
+                >
+                  Info
+                </button>
+              )}
               <h3>
                 {selection.kind === "find_normal" &&
                   `¿Has encontrado el Pato ${selection.duck.number}?`}
+                {selection.kind === "unclaim_normal" &&
+                  `¿Quitar el Pato ${selection.duck.number} de tus encontrados?`}
                 {selection.kind === "find_special" &&
                   `¿Has encontrado el ${SPECIAL_LABELS[selection.duck.type]}?`}
                 {selection.kind === "activate_special" &&
                   `¿Activar el ${SPECIAL_LABELS[selection.duck.type]} ahora?`}
               </h3>
+              {selection.kind === "unclaim_normal" && (
+                <p className="muted" style={{ marginTop: 8 }}>
+                  Úsalo solo si te equivocaste de número — el pato volverá a
+                  quedar libre para que cualquiera pueda encontrarlo.
+                </p>
+              )}
               {selection.kind === "activate_special" && (
                 <p className="muted" style={{ marginTop: 8 }}>
-                  Esto convoca una Reunión en la Charca para todos ahora
+                  Esto convoca la Reunión en el Estanque para todos ahora
                   mismo. Solo hazlo cuando quieras usarlo de verdad.
                 </p>
               )}
@@ -397,12 +429,15 @@ export default function GamePlay() {
                     ? "…"
                     : selection.kind === "activate_special"
                     ? "📣 Activar"
+                    : selection.kind === "unclaim_normal"
+                    ? "Deseleccionar"
                     : "¡Encontrado!"}
                 </button>
               </div>
             </div>
           </div>
         )}
+        {infoType && <SpecialInfoModal type={infoType} onClose={() => setInfoType(null)} />}
       </div>
     </>
   );
