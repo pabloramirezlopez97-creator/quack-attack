@@ -52,7 +52,7 @@ export function playFoundSound() {
   beep(780, 110, 90);
 }
 
-// Reunión en la Charca convocada: aviso algo más largo, dos tonos.
+// Reunión en el Estanque convocada: aviso algo más largo, dos tonos.
 export function playMeetingSound() {
   if (!isSoundEnabled()) return;
   beep(400, 160);
