@@ -39,6 +39,7 @@ export default function GamePlay() {
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [closingMeetingId, setClosingMeetingId] = useState<string | null>(null);
+  const [meetingError, setMeetingError] = useState<string | null>(null);
   const seenMeetingIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -215,8 +216,21 @@ export default function GamePlay() {
 
   async function handleCloseMeeting(meetingId: string) {
     setClosingMeetingId(meetingId);
-    await supabase.rpc("close_meeting", { p_meeting_id: meetingId });
-    setClosingMeetingId(null);
+    setMeetingError(null);
+    try {
+      const { error: rpcError } = await supabase.rpc("close_meeting", { p_meeting_id: meetingId });
+      if (rpcError) {
+        console.error("Error cerrando la Reunión en el Estanque:", rpcError.message);
+        setMeetingError(rpcError.message);
+      }
+    } catch (err) {
+      console.error("Fallo de conexión cerrando la Reunión en el Estanque:", err);
+      setMeetingError(
+        "No se pudo cerrar la Reunión en el Estanque. Revisa tu conexión e inténtalo de nuevo."
+      );
+    } finally {
+      setClosingMeetingId(null);
+    }
   }
 
   if (loading) {
@@ -256,6 +270,9 @@ export default function GamePlay() {
   if (isJefe) {
     return (
       <>
+        {meetingError && (
+          <div className="alert" style={{ margin: "10px 16px 0" }}>{meetingError}</div>
+        )}
         {publicMeetings.length > 0 && (
           <div className="meetings-stack">
             {publicMeetings.map((m) => (
