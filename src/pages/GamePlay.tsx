@@ -333,7 +333,14 @@ export default function GamePlay() {
           <button className="back-btn" onClick={() => nav("/")} aria-label="Salir de la partida">
             ←
           </button>
-          <h2>Partida {game.code}</h2>
+          <div>
+            <h2 style={{ marginBottom: 2 }}>Partida {game.code}</h2>
+            {myPlayer && (
+              <p className="player-role-tag">
+                <strong>EXPLORADOR:</strong> {myPlayer.name}
+              </p>
+            )}
+          </div>
         </div>
 
         {visibleMeetingsForMe.length > 0 && (
