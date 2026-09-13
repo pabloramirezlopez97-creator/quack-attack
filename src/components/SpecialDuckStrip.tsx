@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ACTIVE_SPECIAL_TYPES, SPECIAL_LABELS } from "../types";
-import type { SpecialDuck } from "../types";
+import type { SpecialDuck, SpecialType } from "../types";
+import SpecialInfoModal from "./SpecialInfoModal";
 
 interface SpecialDuckStripProps {
   specialDucks: SpecialDuck[];
@@ -18,20 +19,25 @@ export default function SpecialDuckStrip({
   onActivate,
 }: SpecialDuckStripProps) {
   const ordered = [...specialDucks].sort((a, b) => a.type.localeCompare(b.type));
+  const [infoType, setInfoType] = useState<SpecialType | null>(null);
 
   return (
-    <div className="special-strip">
-      {ordered.map((duck) => (
-        <SpecialTile
-          key={duck.id}
-          duck={duck}
-          myPlayerId={myPlayerId}
-          blocked={blocked}
-          onSelect={onSelect}
-          onActivate={onActivate}
-        />
-      ))}
-    </div>
+    <>
+      <div className="special-strip">
+        {ordered.map((duck) => (
+          <SpecialTile
+            key={duck.id}
+            duck={duck}
+            myPlayerId={myPlayerId}
+            blocked={blocked}
+            onSelect={onSelect}
+            onActivate={onActivate}
+            onInfo={() => setInfoType(duck.type)}
+          />
+        ))}
+      </div>
+      {infoType && <SpecialInfoModal type={infoType} onClose={() => setInfoType(null)} />}
+    </>
   );
 }
 
@@ -41,12 +47,14 @@ function SpecialTile({
   blocked,
   onSelect,
   onActivate,
+  onInfo,
 }: {
   duck: SpecialDuck;
   myPlayerId: string | undefined;
   blocked: boolean;
   onSelect: (duck: SpecialDuck) => void;
   onActivate: (duck: SpecialDuck) => void;
+  onInfo: () => void;
 }) {
   const found = !!duck.owner_id;
   const used = duck.status === "discarded";
@@ -68,6 +76,14 @@ function SpecialTile({
 
   return (
     <div className="special-item">
+      <button
+        className="info-icon-btn"
+        onClick={onInfo}
+        aria-label={`Ver la habilidad de ${SPECIAL_LABELS[duck.type]}`}
+      >
+        i
+      </button>
+
       <button
         className={`special-tile ${stateClass} ${isMine ? "mine" : ""} ${popping ? "pop" : ""}`}
         disabled={found}

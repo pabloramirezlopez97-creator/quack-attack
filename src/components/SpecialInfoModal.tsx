@@ -22,10 +22,8 @@ export default function SpecialInfoModal({ type, onClose }: SpecialInfoModalProp
         </button>
         <div className="info-card-header">
           <img src={SPECIAL_IMAGE[type]} alt="" className="info-card-img" />
-          <div>
-            <h3 style={{ margin: 0 }}>{SPECIAL_LABELS[type]}</h3>
-            <p className="muted" style={{ margin: "4px 0 0" }}>{info.tipo}</p>
-          </div>
+          <h3 style={{ margin: 0 }}>{SPECIAL_LABELS[type]}</h3>
+          <p className="muted" style={{ margin: "4px 0 0" }}>{info.tipo}</p>
         </div>
         <div className="info-card-body">
           {info.parrafos.map((p, i) => (

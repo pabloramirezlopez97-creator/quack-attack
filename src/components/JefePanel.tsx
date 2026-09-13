@@ -54,6 +54,7 @@ export default function JefePanel({
 
   const exploradores = players.filter((p) => p.role === "explorador");
   const ownerName = (id: string | null) => players.find((p) => p.id === id)?.name ?? null;
+  const myName = players.find((p) => p.id === myPlayerId)?.name;
 
   const pendingActive = specialDucks.filter(
     (s) =>
@@ -81,7 +82,14 @@ export default function JefePanel({
         <button className="back-btn" onClick={() => nav("/")} aria-label="Salir de la partida">
           ←
         </button>
-        <h2>Partida {game.code}</h2>
+        <div>
+          <h2 style={{ marginBottom: 2 }}>Partida {game.code}</h2>
+          {myName && (
+            <p className="player-role-tag">
+              <strong>JEFE:</strong> {myName}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="stack">
