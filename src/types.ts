@@ -22,7 +22,8 @@ export type GameStatus =
 export interface Game {
   id: string;
   code: string;
-  mode: 1 | 2 | 3;
+  // 4 = "Equipos de exploradores"
+  mode: 1 | 2 | 3 | 4;
   status: GameStatus;
   max_explorers: number;
   max_jefes: number;
@@ -40,6 +41,20 @@ export interface Player {
   role: Role;
   score: number;
   is_blocked_until: string | null;
+  created_at: string;
+  // Solo tiene valor en el modo "Equipos de exploradores" (mode 4)
+  team_id: string | null;
+}
+
+// Un equipo del modo "Equipos de exploradores". Cada equipo tiene su propio
+// código de unión (distinto del código de la partida): cualquiera que se una
+// con ese código entra automáticamente como Explorador de ese equipo, y todo
+// lo que encuentre suma al marcador compartido del equipo.
+export interface Team {
+  id: string;
+  game_id: string;
+  name: string;
+  code: string;
   created_at: string;
 }
 
