@@ -19,22 +19,77 @@ const MODES = [
     title: "Tres o más Exploradores",
     desc: "Todos buscan a la vez. Se recomiendan los Especiales.",
   },
+  {
+    id: 4,
+    title: "Equipos de exploradores",
+    desc: "Para grupos grandes: cada equipo comparte un código y un marcador.",
+  },
 ] as const;
+
+const MIN_TEAMS = 2;
+const MAX_TEAMS = 12;
 
 export default function CreateGame() {
   const nav = useNavigate();
-  const [mode, setMode] = useState<1 | 2 | 3>(3);
+  const [mode, setMode] = useState<1 | 2 | 3 | 4>(3);
   const [name, setName] = useState("");
   const [maxExplorers, setMaxExplorers] = useState(20);
   const [maxJefes, setMaxJefes] = useState(1);
+  const [teamCount, setTeamCount] = useState(2);
+  const [teamNames, setTeamNames] = useState<string[]>(["", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleTeamCountChange(n: number) {
+    setTeamCount(n);
+    setTeamNames((prev) => {
+      const next = prev.slice(0, n);
+      while (next.length < n) next.push("");
+      return next;
+    });
+  }
+
+  function updateTeamName(index: number, value: string) {
+    setTeamNames((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  }
 
   async function handleCreate() {
     if (!name.trim()) {
       setError("Escribe tu nombre para continuar.");
       return;
     }
+
+    if (mode === 4) {
+      const nombresLimpios = teamNames.map((t) => t.trim());
+      if (nombresLimpios.some((t) => !t)) {
+        setError("Ponle un nombre a cada equipo antes de continuar.");
+        return;
+      }
+      setLoading(true);
+      setError(null);
+
+      const { data, error: rpcError } = await supabase.rpc("create_team_game", {
+        p_max_jefes: maxJefes,
+        p_jefe_name: name.trim(),
+        p_team_names: nombresLimpios,
+      });
+
+      setLoading(false);
+
+      if (rpcError || !data || data.length === 0) {
+        setError(rpcError?.message ?? "No se pudo crear la partida.");
+        return;
+      }
+
+      const row = data[0] as { game_code: string };
+      nav(`/sala/${row.game_code}`);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -96,6 +151,42 @@ export default function CreateGame() {
               label="Número máximo de Patos Exploradores"
             />
           </div>
+        )}
+
+        {mode === 4 && (
+          <>
+            <div className="field">
+              <label>Número de equipos ({MIN_TEAMS}–{MAX_TEAMS})</label>
+              <Stepper
+                value={teamCount}
+                min={MIN_TEAMS}
+                max={MAX_TEAMS}
+                onChange={handleTeamCountChange}
+                label="Número de equipos"
+              />
+            </div>
+
+            {teamNames.map((teamName, i) => (
+              <div className="field" key={i}>
+                <label>Nombre del equipo {i + 1}</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Familia Ramírez"
+                  value={teamName}
+                  maxLength={24}
+                  onChange={(e) => updateTeamName(i, e.target.value)}
+                />
+              </div>
+            ))}
+
+            <div className="field">
+              <p className="muted">
+                Al crear la partida, cada equipo recibirá su propio código. Cualquiera que
+                se una con ese código entrará automáticamente en ese equipo, y todo lo que
+                encuentren sumará al marcador compartido del equipo.
+              </p>
+            </div>
+          </>
         )}
 
         <div className="field">

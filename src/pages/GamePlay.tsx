@@ -13,7 +13,7 @@ import SoundToggle from "../components/SoundToggle";
 import SpecialInfoModal from "../components/SpecialInfoModal";
 import { playFoundSound, playMeetingSound } from "../lib/sound";
 import { SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType } from "../types";
+import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType, Team } from "../types";
 
 type Selection =
   | { kind: "find_normal"; duck: Duck }
@@ -29,6 +29,7 @@ export default function GamePlay() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [ducks, setDucks] = useState<Duck[]>([]);
   const [specialDucks, setSpecialDucks] = useState<SpecialDuck[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,6 +93,16 @@ export default function GamePlay() {
         setSpecialDucks((data as SpecialDuck[]) ?? []);
       }
 
+      async function refreshTeams() {
+        if (gameData.mode !== 4) return;
+        const { data } = await supabase
+          .from("teams")
+          .select("*")
+          .eq("game_id", gameData.id)
+          .order("created_at", { ascending: true });
+        setTeams((data as Team[]) ?? []);
+      }
+
       async function refreshMeetings() {
         const { data, error: meetingsError } = await supabase
           .from("meetings")
@@ -126,6 +137,7 @@ export default function GamePlay() {
           refreshPlayers(),
           refreshDucks(),
           refreshSpecialDucks(),
+          refreshTeams(),
           refreshMeetings(),
         ]);
       }
@@ -143,7 +155,7 @@ export default function GamePlay() {
       initialList.forEach((m) => seenMeetingIds.current.add(m.id));
       setMeetings(initialList);
 
-      await Promise.all([refreshPlayers(), refreshDucks(), refreshSpecialDucks()]);
+      await Promise.all([refreshPlayers(), refreshDucks(), refreshSpecialDucks(), refreshTeams()]);
       setLoading(false);
 
       window.addEventListener("online", refreshAll);
@@ -253,7 +265,7 @@ export default function GamePlay() {
   }
 
   if (game.status === "resultados") {
-    return <Results gameCode={game.code} players={players} />;
+    return <Results gameCode={game.code} players={players} teams={game.mode === 4 ? teams : undefined} />;
   }
 
   const isJefe = myPlayer?.role === "jefe";
@@ -292,6 +304,7 @@ export default function GamePlay() {
           ducks={ducks}
           specialDucks={specialDucks}
           meetings={visibleMeetingsForMe}
+          teams={teams}
           onCloseMeeting={handleCloseMeeting}
           closingMeetingId={closingMeetingId}
           myPlayerId={myPlayer?.id}
@@ -338,6 +351,11 @@ export default function GamePlay() {
             {myPlayer && (
               <p className="player-role-tag">
                 <strong>EXPLORADOR:</strong> {myPlayer.name}
+                {myPlayer.team_id &&
+                  (() => {
+                    const myTeam = teams.find((t) => t.id === myPlayer.team_id);
+                    return myTeam ? ` · ${myTeam.name}` : "";
+                  })()}
               </p>
             )}
           </div>
