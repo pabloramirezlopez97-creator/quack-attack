@@ -8,6 +8,7 @@ interface SpecialDuckStripProps {
   myPlayerId: string | undefined;
   blocked: boolean;
   onSelect: (duck: SpecialDuck) => void;
+  onUnclaim: (duck: SpecialDuck) => void;
   onActivate: (duck: SpecialDuck) => void;
 }
 
@@ -16,6 +17,7 @@ export default function SpecialDuckStrip({
   myPlayerId,
   blocked,
   onSelect,
+  onUnclaim,
   onActivate,
 }: SpecialDuckStripProps) {
   const ordered = [...specialDucks].sort((a, b) => a.type.localeCompare(b.type));
@@ -31,6 +33,7 @@ export default function SpecialDuckStrip({
             myPlayerId={myPlayerId}
             blocked={blocked}
             onSelect={onSelect}
+            onUnclaim={onUnclaim}
             onActivate={onActivate}
             onInfo={() => setInfoType(duck.type)}
           />
@@ -46,6 +49,7 @@ function SpecialTile({
   myPlayerId,
   blocked,
   onSelect,
+  onUnclaim,
   onActivate,
   onInfo,
 }: {
@@ -53,12 +57,14 @@ function SpecialTile({
   myPlayerId: string | undefined;
   blocked: boolean;
   onSelect: (duck: SpecialDuck) => void;
+  onUnclaim: (duck: SpecialDuck) => void;
   onActivate: (duck: SpecialDuck) => void;
   onInfo: () => void;
 }) {
   const found = !!duck.owner_id;
   const used = duck.status === "discarded";
   const isMine = found && duck.owner_id === myPlayerId;
+  const canUnclaim = isMine && duck.status === "held";
   const canActivate = isMine && ACTIVE_SPECIAL_TYPES.includes(duck.type) && !duck.used;
   const stateClass = used ? "used" : found ? "found-held" : "unfound";
 
@@ -81,13 +87,13 @@ function SpecialTile({
         onClick={onInfo}
         aria-label={`Ver la habilidad de ${SPECIAL_LABELS[duck.type]}`}
       >
-        i
+        Info
       </button>
 
       <button
         className={`special-tile ${stateClass} ${isMine ? "mine" : ""} ${popping ? "pop" : ""}`}
-        disabled={found}
-        onClick={() => onSelect(duck)}
+        disabled={found && !canUnclaim}
+        onClick={() => (found ? canUnclaim && onUnclaim(duck) : onSelect(duck))}
         aria-label={SPECIAL_LABELS[duck.type]}
       >
         <img

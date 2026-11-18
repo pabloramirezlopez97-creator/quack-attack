@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient";
 import { SPECIAL_IMAGE, SPECIAL_LABELS } from "../types";
 import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType, Team } from "../types";
 import MeetingResolutionPanel from "./MeetingResolutionPanel";
+import LiveRanking from "./LiveRanking";
 import SoundToggle from "./SoundToggle";
 import SpecialInfoModal from "./SpecialInfoModal";
 
@@ -130,6 +131,8 @@ export default function JefePanel({
             closing={closingMeetingId === m.id}
           />
         ))}
+
+        <LiveRanking players={players} teams={isTeamMode ? teams : undefined} />
 
         <div className="card">
           <p className="muted" style={{ marginBottom: 4 }}>
