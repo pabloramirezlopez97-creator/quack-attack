@@ -3,12 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import SpecialSpinner from "../components/SpecialSpinner";
 import FloatingDucks from "../components/FloatingDucks";
-import type { Game, Player } from "../types";
+import type { Game, Player, Team } from "../types";
 
 const MODE_LABEL: Record<number, string> = {
   1: "Un Pato Explorador",
   2: "Dos Patos Exploradores",
   3: "Tres o más Exploradores",
+  4: "Equipos de exploradores",
 };
 
 export default function Lobby() {
@@ -17,6 +18,7 @@ export default function Lobby() {
 
   const [game, setGame] = useState<Game | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,18 @@ export default function Lobby() {
         setMyPlayer(list.find((p) => p.session_id === myId) ?? null);
       }
 
+      async function refreshTeams() {
+        if (gameData.mode !== 4) return;
+        const { data: teamsData } = await supabase
+          .from("teams")
+          .select("*")
+          .eq("game_id", gameData.id)
+          .order("created_at", { ascending: true });
+        setTeams((teamsData as Team[]) ?? []);
+      }
+
       await refreshPlayers();
+      await refreshTeams();
       setLoading(false);
 
       // Tiempo real: jugadores entrando + cambios de estado de la partida
@@ -137,6 +150,13 @@ export default function Lobby() {
   const jefes = players.filter((p) => p.role === "jefe");
   const exploradores = players.filter((p) => p.role === "explorador");
   const isJefe = myPlayer?.role === "jefe";
+  const isTeamMode = game.mode === 4;
+
+  function copyTeamCode(teamCode: string) {
+    navigator.clipboard?.writeText(teamCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
     <div className="screen screen--lobby">
@@ -169,13 +189,57 @@ export default function Lobby() {
               <span className="role-pill jefe">Jefe</span>
             </div>
           ))}
-          {exploradores.map((p) => (
-            <div className="player-row" key={p.id}>
-              <img src="/assets/ducks/pato explorador.png" alt="" className="role-icon" />
-              <span>{p.name}</span>
-              <span className="role-pill explorador">Explorador</span>
-            </div>
-          ))}
+
+          {!isTeamMode &&
+            exploradores.map((p) => (
+              <div className="player-row" key={p.id}>
+                <img src="/assets/ducks/pato explorador.png" alt="" className="role-icon" />
+                <span>{p.name}</span>
+                <span className="role-pill explorador">Explorador</span>
+              </div>
+            ))}
+
+          {isTeamMode &&
+            teams.map((team) => {
+              const miembros = exploradores.filter((p) => p.team_id === team.id);
+              return (
+                <div key={team.id} style={{ marginBottom: 14 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <strong style={{ color: "var(--white)" }}>🦆 {team.name}</strong>
+                    {isJefe && (
+                      <button
+                        className="role-pill explorador"
+                        style={{ border: "none", cursor: "pointer" }}
+                        onClick={() => copyTeamCode(team.code)}
+                        aria-label={`Copiar código del equipo ${team.name}`}
+                      >
+                        {team.code}
+                      </button>
+                    )}
+                  </div>
+                  {miembros.length === 0 ? (
+                    <p className="muted" style={{ marginLeft: 4 }}>
+                      Nadie se ha unido todavía a este equipo.
+                    </p>
+                  ) : (
+                    miembros.map((p) => (
+                      <div className="player-row" key={p.id}>
+                        <img src="/assets/ducks/pato explorador.png" alt="" className="role-icon" />
+                        <span>{p.name}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              );
+            })}
+
           {players.length === 0 && (
             <p className="muted">
               🦆 Comparte el código de arriba con tu grupo — en cuanto se
@@ -183,6 +247,14 @@ export default function Lobby() {
             </p>
           )}
         </div>
+
+        {isJefe && isTeamMode && (
+          <div className="card">
+            <p className="muted" style={{ marginBottom: 10 }}>
+              Reparte a cada familia o grupo <strong style={{ color: "var(--white)" }}>su propio código</strong> (toca el código junto al nombre del equipo para copiarlo). Cualquiera que se una con ese código entra automáticamente en ese equipo, y todo lo que encuentren sumará al marcador del equipo.
+            </p>
+          </div>
+        )}
 
         {isJefe ? (
           <>
