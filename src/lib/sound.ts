@@ -12,6 +12,8 @@ export function isSoundEnabled(): boolean {
 export function setSoundEnabled(enabled: boolean) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0");
+  // Avisa a la música de fondo para que se silencie / reactive al instante.
+  window.dispatchEvent(new Event("quackattack-sound-change"));
 }
 
 let ctx: AudioContext | null = null;
@@ -45,11 +47,69 @@ function beep(freq: number, durationMs: number, delayMs = 0, volume = 0.15) {
   osc.stop(start + durationMs / 1000);
 }
 
-// Pato encontrado: un "pop" ascendente breve.
-export function playFoundSound() {
+// Al pulsar un número o un Pato Especial (abrir la ventana de confirmación):
+// el "pop" ascendente breve de siempre.
+export function playSelectSound() {
   if (!isSoundEnabled()) return;
   beep(520, 90);
   beep(780, 110, 90);
+}
+
+// Al pulsar "¡Encontrado!": un "cuack" de pato de dibujos animados.
+// Se sintetiza con un oscilador "sierra" (voz nasal) cuyo tono baja de golpe,
+// pasado por un filtro que barre de "u" a "a" para dar la vocal.
+export function playQuackSound() {
+  if (!isSoundEnabled()) return;
+  const audioCtx = getContext();
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  const dur = 0.22;
+
+  const osc = audioCtx.createOscillator();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(520, t);
+  osc.frequency.exponentialRampToValueAtTime(260, t + dur);
+
+  // Pequeño vibrato rápido: da el carácter "graznido".
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+  lfo.frequency.value = 38;
+  lfoGain.gain.value = 22;
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc.frequency);
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.Q.value = 4;
+  filter.frequency.setValueAtTime(650, t);
+  filter.frequency.exponentialRampToValueAtTime(1500, t + 0.07);
+  filter.frequency.exponentialRampToValueAtTime(900, t + dur);
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.001, t);
+  gain.gain.exponentialRampToValueAtTime(0.5, t + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(t);
+  lfo.start(t);
+  osc.stop(t + dur + 0.02);
+  lfo.stop(t + dur + 0.02);
+}
+
+// Campana de alarma: tres golpes de campana al activar un Pato Especial.
+function bellStrike(freq: number, delayMs: number) {
+  beep(freq, 650, delayMs, 0.18);
+  beep(freq * 2.76, 380, delayMs, 0.07); // parcial inarmónico: timbre metálico
+  beep(freq * 5.4, 200, delayMs, 0.04);
+}
+export function playAlarmSound() {
+  if (!isSoundEnabled()) return;
+  bellStrike(880, 0);
+  bellStrike(880, 280);
+  bellStrike(880, 560);
 }
 
 // Reunión en el Estanque convocada: aviso algo más largo, dos tonos.
