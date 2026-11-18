@@ -363,24 +363,23 @@ input { font-family: var(--font-body); }
 }
 .info-icon-btn {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  background: var(--yellow);
   color: var(--white);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  font-size: 0.68rem;
+  font-size: 0.56rem;
   font-weight: 800;
-  font-style: italic;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   line-height: 1;
+  padding: 3px 6px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 .info-icon-btn:active {
-  transform: scale(0.85);
-  background: rgba(255, 255, 255, 0.18);
+  transform: scale(0.88);
 }
 .special-tile {
   appearance: none;
@@ -762,19 +761,22 @@ input { font-family: var(--font-body); }
 }
 
 /* ---------- botón "info" dentro del modal de selección (Explorador) ---------- */
+.modal-card--has-info {
+  padding-top: 56px;
+}
 .modal-info-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 16px;
+  right: 16px;
   appearance: none;
-  border: 1px solid var(--panel-border);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-muted);
+  border: none;
+  background: var(--yellow);
+  color: var(--white);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
 }
 .modal-info-btn:active {
@@ -964,4 +966,42 @@ input { font-family: var(--font-body); }
     opacity: 0;
     transform: translate(calc(var(--drift, 0px) * 1.6), -260px) rotate(-4deg);
   }
+}
+
+/* ---------- ranking en directo (plegable) ---------- */
+.live-ranking {
+  padding: 12px 14px;
+}
+.ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px;
+  border-radius: 10px;
+}
+.ranking-row.mine {
+  background: rgba(245, 197, 24, 0.14);
+}
+.ranking-pos {
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.ranking-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ranking-toggle {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--yellow);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 6px 4px;
+  width: 100%;
+  text-align: center;
 }
