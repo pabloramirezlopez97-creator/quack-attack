@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import SoundToggle from "../components/SoundToggle";
+import { startMusic } from "../lib/music";
 import LegalFooter from "../components/LegalFooter";
 import type { GameStatus, Role } from "../types";
 
@@ -13,6 +15,10 @@ interface ActiveGame {
 export default function Home() {
   const nav = useNavigate();
   const [activeGame, setActiveGame] = useState<ActiveGame | null>(null);
+
+  useEffect(() => {
+    startMusic();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +67,7 @@ export default function Home() {
 
   return (
     <div className="screen center">
+      <SoundToggle />
       <img
         src="/assets/branding/logo.png"
         alt="Quack Attack"

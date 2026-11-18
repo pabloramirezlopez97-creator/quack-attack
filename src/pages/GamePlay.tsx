@@ -10,8 +10,10 @@ import JefePanel from "../components/JefePanel";
 import SpecialSpinner from "../components/SpecialSpinner";
 import Results from "./Results";
 import SoundToggle from "../components/SoundToggle";
+import LiveRanking from "../components/LiveRanking";
 import SpecialInfoModal from "../components/SpecialInfoModal";
-import { playFoundSound, playMeetingSound } from "../lib/sound";
+import { playAlarmSound, playQuackSound, playSelectSound } from "../lib/sound";
+import { stopMusic } from "../lib/music";
 import { SPECIAL_LABELS } from "../types";
 import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType, Team } from "../types";
 
@@ -19,6 +21,7 @@ type Selection =
   | { kind: "find_normal"; duck: Duck }
   | { kind: "unclaim_normal"; duck: Duck }
   | { kind: "find_special"; duck: SpecialDuck }
+  | { kind: "unclaim_special"; duck: SpecialDuck }
   | { kind: "activate_special"; duck: SpecialDuck };
 
 export default function GamePlay() {
@@ -42,6 +45,14 @@ export default function GamePlay() {
   const [closingMeetingId, setClosingMeetingId] = useState<string | null>(null);
   const [meetingError, setMeetingError] = useState<string | null>(null);
   const seenMeetingIds = useRef<Set<string>>(new Set());
+  // Para el sonido del Jefe: patos normales ya reclamados y rol del jugador.
+  const claimedDuckIds = useRef<Set<string> | null>(null);
+  const isJefeRef = useRef(false);
+
+  // Durante la partida no hay música de fondo, solo los efectos.
+  useEffect(() => {
+    stopMusic();
+  }, []);
 
   useEffect(() => {
     if (!code) return;
@@ -73,7 +84,9 @@ export default function GamePlay() {
           .order("created_at", { ascending: true });
         const list = (data as Player[]) ?? [];
         setPlayers(list);
-        setMyPlayer(list.find((p) => p.session_id === myId) ?? null);
+        const me = list.find((p) => p.session_id === myId) ?? null;
+        isJefeRef.current = me?.role === "jefe";
+        setMyPlayer(me);
       }
 
       async function refreshDucks() {
@@ -82,7 +95,19 @@ export default function GamePlay() {
           .select("*")
           .eq("game_id", gameData.id)
           .order("number", { ascending: true });
-        setDucks((data as Duck[]) ?? []);
+        const list = (data as Duck[]) ?? [];
+        setDucks(list);
+        // El Jefe oye un "cuack" cada vez que alguien encuentra un pato normal.
+        const nowClaimed = new Set(list.filter((d) => d.owner_id).map((d) => d.id));
+        if (claimedDuckIds.current && isJefeRef.current) {
+          for (const id of nowClaimed) {
+            if (!claimedDuckIds.current.has(id)) {
+              playQuackSound();
+              break;
+            }
+          }
+        }
+        claimedDuckIds.current = nowClaimed;
       }
 
       async function refreshSpecialDucks() {
@@ -117,7 +142,7 @@ export default function GamePlay() {
         for (const m of list) {
           if (!seenMeetingIds.current.has(m.id)) {
             seenMeetingIds.current.add(m.id);
-            playMeetingSound();
+            playAlarmSound(); // suena a todos: Jefes y Exploradores
           }
         }
       }
@@ -200,6 +225,11 @@ export default function GamePlay() {
     };
   }, [code]);
 
+  // Sonido al pulsar un número o un Pato Especial (abre la ventana de confirmación).
+  useEffect(() => {
+    if (selection) playSelectSound();
+  }, [selection?.kind, selection?.duck.id]);
+
   async function confirmSelection() {
     if (!selection) return;
     setSubmitting(true);
@@ -212,6 +242,8 @@ export default function GamePlay() {
         ? supabase.rpc("release_duck", { p_duck_id: selection.duck.id })
         : selection.kind === "find_special"
         ? supabase.rpc("claim_special_duck", { p_special_id: selection.duck.id })
+        : selection.kind === "unclaim_special"
+        ? supabase.rpc("release_special_duck", { p_special_id: selection.duck.id })
         : supabase.rpc("activate_special", { p_special_id: selection.duck.id });
 
     const { error: rpcError } = await rpc;
@@ -221,7 +253,7 @@ export default function GamePlay() {
       return;
     }
     if (selection.kind === "find_normal" || selection.kind === "find_special") {
-      playFoundSound();
+      playQuackSound();
     }
     setSelection(null);
   }
@@ -385,6 +417,12 @@ export default function GamePlay() {
             <span className="muted">Total: <strong className="num">{foundCount} / 100</strong></span>
           </div>
 
+          <LiveRanking
+            players={players}
+            teams={game.mode === 4 ? teams : undefined}
+            myPlayerId={myPlayer?.id}
+          />
+
           {allFound && (
             <div className="card" style={{ borderColor: "var(--yellow)", textAlign: "center" }}>
               <p style={{ color: "var(--yellow)", fontWeight: 700, margin: 0 }}>
@@ -408,6 +446,7 @@ export default function GamePlay() {
             myPlayerId={myPlayer?.id}
             blocked={anyMeetingPending}
             onSelect={(duck) => setSelection({ kind: "find_special", duck })}
+            onUnclaim={(duck) => setSelection({ kind: "unclaim_special", duck })}
             onActivate={(duck) => setSelection({ kind: "activate_special", duck })}
           />
         </div>
@@ -426,8 +465,19 @@ export default function GamePlay() {
 
         {selection && (
           <div className="modal-backdrop" onClick={() => !submitting && setSelection(null)}>
-            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-              {(selection.kind === "find_special" || selection.kind === "activate_special") && (
+            <div
+              className={`modal-card ${
+                selection.kind === "find_special" ||
+                selection.kind === "activate_special" ||
+                selection.kind === "unclaim_special"
+                  ? "modal-card--has-info"
+                  : ""
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {(selection.kind === "find_special" ||
+                selection.kind === "activate_special" ||
+                selection.kind === "unclaim_special") && (
                 <button
                   className="modal-info-btn"
                   onClick={() => setInfoType(selection.duck.type)}
@@ -442,13 +492,22 @@ export default function GamePlay() {
                   `¿Quitar el Pato ${selection.duck.number} de tus encontrados?`}
                 {selection.kind === "find_special" &&
                   `¿Has encontrado el ${SPECIAL_LABELS[selection.duck.type]}?`}
+                {selection.kind === "unclaim_special" &&
+                  `¿Quitar el ${SPECIAL_LABELS[selection.duck.type]} de tus encontrados?`}
                 {selection.kind === "activate_special" &&
                   `¿Activar el ${SPECIAL_LABELS[selection.duck.type]} ahora?`}
               </h3>
               {selection.kind === "unclaim_normal" && (
                 <p className="muted" style={{ marginTop: 8 }}>
-                  Úsalo solo si te equivocaste de número — el pato volverá a
+                  Úsalo solo si te equivocaste de número. El pato volverá a
                   quedar libre para que cualquiera pueda encontrarlo.
+                </p>
+              )}
+              {selection.kind === "unclaim_special" && (
+                <p className="muted" style={{ marginTop: 8 }}>
+                  Úsalo solo si te equivocaste de color de pato especial. El
+                  pato volverá a quedar libre para que cualquiera pueda
+                  encontrarlo.
                 </p>
               )}
               {selection.kind === "activate_special" && (
@@ -471,7 +530,7 @@ export default function GamePlay() {
                     ? "…"
                     : selection.kind === "activate_special"
                     ? "📣 Activar"
-                    : selection.kind === "unclaim_normal"
+                    : selection.kind === "unclaim_normal" || selection.kind === "unclaim_special"
                     ? "Deseleccionar"
                     : "¡Encontrado!"}
                 </button>

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import SoundToggle from "../components/SoundToggle";
+import { startMusic } from "../lib/music";
 import Stepper from "../components/Stepper";
 
 const MODES = [
@@ -39,6 +41,10 @@ export default function CreateGame() {
   const [teamNames, setTeamNames] = useState<string[]>(["", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    startMusic();
+  }, []);
 
   function handleTeamCountChange(n: number) {
     setTeamCount(n);
@@ -115,6 +121,7 @@ export default function CreateGame() {
 
   return (
     <div className="screen">
+      <SoundToggle />
       <div className="topbar">
         <button className="back-btn" onClick={() => nav(-1)} aria-label="Volver">
           ←

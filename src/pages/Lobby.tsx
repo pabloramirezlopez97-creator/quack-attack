@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import SoundToggle from "../components/SoundToggle";
+import { startMusic } from "../lib/music";
 import SpecialSpinner from "../components/SpecialSpinner";
 import FloatingDucks from "../components/FloatingDucks";
 import type { Game, Player, Team } from "../types";
@@ -24,6 +26,10 @@ export default function Lobby() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
+
+  useEffect(() => {
+    startMusic();
+  }, []);
 
   useEffect(() => {
     if (!code) return;
@@ -161,6 +167,7 @@ export default function Lobby() {
   return (
     <div className="screen screen--lobby">
       <FloatingDucks />
+      <SoundToggle />
 
       <div className="topbar">
         <button className="back-btn" onClick={() => nav("/")} aria-label="Salir">

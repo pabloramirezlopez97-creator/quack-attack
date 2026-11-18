@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import SoundToggle from "../components/SoundToggle";
+import { startMusic } from "../lib/music";
 import type { Role } from "../types";
 
 export default function JoinGame() {
@@ -39,8 +41,13 @@ export default function JoinGame() {
     nav(`/sala/${code.trim().toUpperCase()}`);
   }
 
+  useEffect(() => {
+    startMusic();
+  }, []);
+
   return (
     <div className="screen">
+      <SoundToggle />
       <div className="topbar">
         <button className="back-btn" onClick={() => nav(-1)} aria-label="Volver">
           ←
