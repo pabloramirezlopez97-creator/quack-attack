@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { SPECIAL_IMAGE, SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType } from "../types";
+import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType, Team } from "../types";
 import MeetingResolutionPanel from "./MeetingResolutionPanel";
 import SoundToggle from "./SoundToggle";
 import SpecialInfoModal from "./SpecialInfoModal";
@@ -23,6 +23,7 @@ interface JefePanelProps {
   ducks: Duck[];
   specialDucks: SpecialDuck[];
   meetings: Meeting[];
+  teams?: Team[];
   onCloseMeeting: (meetingId: string) => void;
   closingMeetingId: string | null;
   myPlayerId: string | undefined;
@@ -34,6 +35,7 @@ export default function JefePanel({
   ducks,
   specialDucks,
   meetings,
+  teams,
   onCloseMeeting,
   closingMeetingId,
   myPlayerId,
@@ -55,6 +57,20 @@ export default function JefePanel({
   const exploradores = players.filter((p) => p.role === "explorador");
   const ownerName = (id: string | null) => players.find((p) => p.id === id)?.name ?? null;
   const myName = players.find((p) => p.id === myPlayerId)?.name;
+
+  const isTeamMode = game.mode === 4 && !!teams && teams.length > 0;
+  const teamsRanked = isTeamMode
+    ? teams!
+        .map((team) => {
+          const miembros = exploradores
+            .filter((p) => p.team_id === team.id)
+            .slice()
+            .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+          const total = miembros.reduce((sum, p) => sum + p.score, 0);
+          return { team, miembros, total };
+        })
+        .sort((a, b) => b.total - a.total || a.team.name.localeCompare(b.team.name))
+    : [];
 
   const pendingActive = specialDucks.filter(
     (s) =>
@@ -139,13 +155,42 @@ export default function JefePanel({
             Patos Exploradores ({exploradores.length})
           </p>
           {exploradores.length === 0 && <p className="muted">Nadie se ha unido todavía.</p>}
-          {exploradores.map((p) => (
-            <div className="player-row" key={p.id}>
-              <img src="/assets/ducks/pato explorador.png" alt="" className="role-icon" />
-              <span>{p.name}</span>
-              <span className="num" style={{ marginLeft: "auto" }}>{p.score} pts</span>
-            </div>
-          ))}
+
+          {!isTeamMode &&
+            exploradores.map((p) => (
+              <div className="player-row" key={p.id}>
+                <img src="/assets/ducks/pato explorador.png" alt="" className="role-icon" />
+                <span>{p.name}</span>
+                <span className="num" style={{ marginLeft: "auto" }}>{p.score} pts</span>
+              </div>
+            ))}
+
+          {isTeamMode &&
+            teamsRanked.map(({ team, miembros, total }) => (
+              <div key={team.id} style={{ marginBottom: 12 }}>
+                <div
+                  className="player-row"
+                  style={{ fontWeight: 700 }}
+                >
+                  <span>🦆 {team.name}</span>
+                  <span className="num" style={{ marginLeft: "auto" }}>{total} pts</span>
+                </div>
+                {miembros.length === 0 ? (
+                  <p className="muted" style={{ marginLeft: 24 }}>Nadie se ha unido todavía.</p>
+                ) : (
+                  miembros.map((p) => (
+                    <div
+                      key={p.id}
+                      className="muted"
+                      style={{ display: "flex", justifyContent: "space-between", paddingLeft: 24 }}
+                    >
+                      <span>{p.name}</span>
+                      <span className="num">{p.score} pts</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            ))}
         </div>
 
         <div className="card">
