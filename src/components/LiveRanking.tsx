@@ -3,7 +3,7 @@ import type { Player, Team } from "../types";
 
 interface LiveRankingProps {
   players: Player[];
-  // Solo en modo "Equipos de exploradores": el ranking es por equipos.
+  // Solo en modo "Equipos de Exploradores": el ranking es por equipos.
   teams?: Team[];
   // Para resaltar tu fila (tu id de jugador; en equipos, se resalta tu equipo).
   myPlayerId?: string;
