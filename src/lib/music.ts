@@ -1,7 +1,7 @@
 // Música de fondo generada con Web Audio API (sin archivos de audio).
 // Suena en Inicio, Crear partida, Unirse y Sala de espera; se para al entrar
 // en la partida (GamePlay), donde solo suenan los efectos.
-import { isSoundEnabled } from "./sound";
+import { getSharedContext, isSoundEnabled } from "./sound";
 
 const BPM = 112;
 const STEP = 60 / BPM / 2; // corchea, en segundos
@@ -30,10 +30,10 @@ let wanted = false;
 
 function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
-  if (!ctx) {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioCtx) return null;
-    ctx = new AudioCtx();
+  const shared = getSharedContext();
+  if (!shared) return null;
+  if (ctx !== shared) {
+    ctx = shared;
     master = ctx.createGain();
     master.gain.value = isSoundEnabled() ? 1 : 0;
     master.connect(ctx.destination);

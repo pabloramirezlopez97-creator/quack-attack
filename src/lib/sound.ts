@@ -18,6 +18,10 @@ export function setSoundEnabled(enabled: boolean) {
 
 let ctx: AudioContext | null = null;
 
+export function getSharedContext(): AudioContext | null {
+  return getContext();
+}
+
 function getContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
@@ -27,6 +31,32 @@ function getContext(): AudioContext | null {
   }
   if (ctx.state === "suspended") ctx.resume();
   return ctx;
+}
+
+// iPhone/iPad no dejan sonar nada hasta que el usuario toca la pantalla al menos
+// una vez con el audio "desbloqueado". Lo hacemos en el primer toque de cualquier
+// pantalla (también la del Jefe) y lo repetimos si el sistema vuelve a suspenderlo.
+let unlocked = false;
+function unlockAudio() {
+  const c = getContext();
+  if (!c) return;
+  if (!unlocked) {
+    try {
+      const buf = c.createBuffer(1, 1, 22050);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.connect(c.destination);
+      src.start(0);
+      unlocked = true;
+    } catch {
+      /* ignorar */
+    }
+  }
+}
+if (typeof window !== "undefined") {
+  ["pointerdown", "touchend", "click", "keydown"].forEach((ev) =>
+    window.addEventListener(ev, unlockAudio, { passive: true })
+  );
 }
 
 function beep(freq: number, durationMs: number, delayMs = 0, volume = 0.15) {
