@@ -46,6 +46,19 @@ export interface Player {
   team_id: string | null;
 }
 
+// Solicitud de un jugador para unirse a una partida ya iniciada.
+// El Pato Jefe la acepta (entra como jugador) o la rechaza.
+export interface JoinRequest {
+  id: string;
+  game_id: string;
+  session_id: string;
+  name: string;
+  role: Role;
+  team_id: string | null;
+  status: "pending" | "accepted" | "rejected";
+  created_at: string;
+}
+
 // Un equipo del modo "Equipos de exploradores". Cada equipo tiene su propio
 // código de unión (distinto del código de la partida): cualquiera que se una
 // con ese código entra automáticamente como Explorador de ese equipo, y todo
