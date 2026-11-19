@@ -48,6 +48,7 @@ export default function GamePlay() {
   // Para el sonido del Jefe: patos normales ya reclamados y rol del jugador.
   const claimedDuckIds = useRef<Set<string> | null>(null);
   const isJefeRef = useRef(false);
+  const myPlayerIdRef = useRef<string | null>(null);
 
   // Durante la partida no hay música de fondo, solo los efectos.
   useEffect(() => {
@@ -86,6 +87,7 @@ export default function GamePlay() {
         setPlayers(list);
         const me = list.find((p) => p.session_id === myId) ?? null;
         isJefeRef.current = me?.role === "jefe";
+        myPlayerIdRef.current = me?.id ?? null;
         setMyPlayer(me);
       }
 
@@ -142,7 +144,12 @@ export default function GamePlay() {
         for (const m of list) {
           if (!seenMeetingIds.current.has(m.id)) {
             seenMeetingIds.current.add(m.id);
-            playAlarmSound(); // suena a todos: Jefes y Exploradores
+            // La alarma suena a todos, salvo con el Pato Naranja: ese solo suena
+            // al Jefe y a quien lo activó.
+            const soloJefeYActivador = m.special_type === "naranja";
+            if (!soloJefeYActivador || isJefeRef.current || m.player_id === myPlayerIdRef.current) {
+              playAlarmSound();
+            }
           }
         }
       }

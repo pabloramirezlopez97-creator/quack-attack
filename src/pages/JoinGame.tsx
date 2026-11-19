@@ -23,6 +23,12 @@ export default function JoinGame() {
     setLoading(true);
     setError(null);
 
+    // Si el navegador perdió la sesión anónima, la recuperamos antes de continuar.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      await supabase.auth.signInAnonymously();
+    }
+
     const { data, error: rpcError } = await supabase
       .rpc("join_game", {
         p_code: code.trim().toUpperCase(),
@@ -38,7 +44,10 @@ export default function JoinGame() {
       return;
     }
 
-    nav(`/sala/${code.trim().toUpperCase()}`);
+    // Si entraste con el código de un equipo, la sala es la de la partida a la que
+    // pertenece ese equipo, no el código que has escrito.
+    const row = data as { out_game_code?: string };
+    nav(`/sala/${row.out_game_code ?? code.trim().toUpperCase()}`);
   }
 
   useEffect(() => {

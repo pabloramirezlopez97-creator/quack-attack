@@ -7,7 +7,7 @@ import type { Player, Team } from "../types";
 interface ResultsProps {
   gameCode: string;
   players: Player[];
-  // Solo en el modo "Equipos de exploradores" (mode 4): la lista de equipos de
+  // Solo en el modo "Equipos de Exploradores" (mode 4): la lista de equipos de
   // esta partida. Si se pasa, el podio y el marcador se agrupan por equipo.
   teams?: Team[];
 }

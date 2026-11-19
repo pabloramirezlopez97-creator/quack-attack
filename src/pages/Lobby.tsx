@@ -11,7 +11,7 @@ const MODE_LABEL: Record<number, string> = {
   1: "Un Pato Explorador",
   2: "Dos Patos Exploradores",
   3: "Tres o más Exploradores",
-  4: "Equipos de exploradores",
+  4: "Equipos de Exploradores",
 };
 
 export default function Lobby() {
@@ -177,12 +177,19 @@ export default function Lobby() {
       </div>
 
       <div className="stack">
-        <button className="game-code" onClick={copyCode} aria-label="Copiar código">
-          {game.code}
-        </button>
-        <p className="muted" style={{ textAlign: "center", marginTop: -6 }}>
-          {copied ? "¡Código copiado!" : "Toca el código para copiarlo · compártelo con el grupo"}
-        </p>
+        {!isTeamMode && (
+          <>
+            <button className="game-code" onClick={copyCode} aria-label="Copiar código">
+              {game.code}
+            </button>
+            <p className="muted" style={{ textAlign: "center", marginTop: -6 }}>
+              {copied ? "¡Código copiado!" : "Toca el código para copiarlo · compártelo con el grupo"}
+            </p>
+          </>
+        )}
+        {isTeamMode && copied && (
+          <p className="muted" style={{ textAlign: "center" }}>¡Código copiado!</p>
+        )}
 
         <div className="card">
           <p className="muted" style={{ marginBottom: 10 }}>
@@ -210,7 +217,7 @@ export default function Lobby() {
             teams.map((team) => {
               const miembros = exploradores.filter((p) => p.team_id === team.id);
               return (
-                <div key={team.id} style={{ marginBottom: 14 }}>
+                <div key={team.id} style={{ marginTop: 18, marginBottom: 6 }}>
                   <div
                     style={{
                       display: "flex",
@@ -254,6 +261,22 @@ export default function Lobby() {
             </p>
           )}
         </div>
+
+        {isJefe && isTeamMode && game.max_jefes > 1 && (
+          <div className="card">
+            <p className="muted">
+              Código para que se unan otros Jefes / Guardianes:{" "}
+              <button
+                className="role-pill jefe"
+                style={{ border: "none", cursor: "pointer" }}
+                onClick={copyCode}
+                aria-label="Copiar código para otros Jefes"
+              >
+                {game.code}
+              </button>
+            </p>
+          </div>
+        )}
 
         {isJefe && isTeamMode && (
           <div className="card">

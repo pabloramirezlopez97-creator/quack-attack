@@ -23,11 +23,12 @@ const MODES = [
   },
   {
     id: 4,
-    title: "Equipos de exploradores",
-    desc: "Para grupos grandes: cada equipo comparte un código y un marcador.",
+    title: "Equipos de Exploradores",
+    desc: "Para grupos grandes: cada equipo tiene su propio código y marcador.",
   },
 ] as const;
 
+const TEAM_EXAMPLES = ["Equipo Alpha", "Equipo Beta", "Equipo Gamma", "Equipo Delta", "Equipo Omega", "Equipo Sigma"];
 const MIN_TEAMS = 2;
 const MAX_TEAMS = 12;
 
@@ -67,6 +68,11 @@ export default function CreateGame() {
     if (!name.trim()) {
       setError("Escribe tu nombre para continuar.");
       return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      await supabase.auth.signInAnonymously();
     }
 
     if (mode === 4) {
@@ -178,7 +184,7 @@ export default function CreateGame() {
                 <label>Nombre del equipo {i + 1}</label>
                 <input
                   type="text"
-                  placeholder="Ej: Familia Ramírez"
+                  placeholder={`Ej: ${TEAM_EXAMPLES[i % TEAM_EXAMPLES.length]}`}
                   value={teamName}
                   maxLength={24}
                   onChange={(e) => updateTeamName(i, e.target.value)}
