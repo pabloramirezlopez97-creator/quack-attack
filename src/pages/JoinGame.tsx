@@ -1,9 +1,10 @@
+// → src/pages/
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import SoundToggle from "../components/SoundToggle";
 import { startMusic } from "../lib/music";
-import type { Role } from "../types";
+import type { JoinRequest, Role } from "../types";
 
 export default function JoinGame() {
   const nav = useNavigate();
@@ -14,6 +15,9 @@ export default function JoinGame() {
   const [role, setRole] = useState<Role>("explorador");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Si la partida ya empezó hay que esperar a que el Jefe acepte la solicitud.
+  const [waiting, setWaiting] = useState<{ requestId: string; gameCode: string } | null>(null);
+  const [requestStatus, setRequestStatus] = useState<JoinRequest["status"]>("pending");
 
   async function handleJoin() {
     if (!code.trim() || !name.trim()) {
@@ -46,13 +50,108 @@ export default function JoinGame() {
 
     // Si entraste con el código de un equipo, la sala es la de la partida a la que
     // pertenece ese equipo, no el código que has escrito.
-    const row = data as { out_game_code?: string };
-    nav(`/sala/${row.out_game_code ?? code.trim().toUpperCase()}`);
+    const row = data as {
+      out_game_code?: string;
+      out_status?: string;
+      out_request_id?: string | null;
+    };
+    const gameCode = row.out_game_code ?? code.trim().toUpperCase();
+
+    if (row.out_status === "pending" && row.out_request_id) {
+      setRequestStatus("pending");
+      setWaiting({ requestId: row.out_request_id, gameCode });
+      return;
+    }
+    nav(`/sala/${gameCode}`);
   }
+
+  async function handleCancelRequest() {
+    if (waiting) {
+      await supabase.rpc("cancel_join_request", { p_request_id: waiting.requestId });
+    }
+    setWaiting(null);
+  }
+
+  // Mientras esperamos, escuchamos la respuesta del Jefe (tiempo real + comprobación cada 3 s).
+  useEffect(() => {
+    if (!waiting) return;
+    let active = true;
+
+    async function check() {
+      const { data } = await supabase
+        .from("join_requests")
+        .select("status")
+        .eq("id", waiting!.requestId)
+        .maybeSingle();
+      if (!active || !data) return;
+      const status = (data as { status: JoinRequest["status"] }).status;
+      if (status === "accepted") {
+        nav(`/partida/${waiting!.gameCode}`);
+      } else if (status === "rejected") {
+        setRequestStatus("rejected");
+      }
+    }
+
+    const channel = supabase
+      .channel(`join-request-${waiting.requestId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "join_requests", filter: `id=eq.${waiting.requestId}` },
+        check
+      )
+      .subscribe();
+    const timer = window.setInterval(check, 3000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [waiting, nav]);
 
   useEffect(() => {
     startMusic();
   }, []);
+
+  if (waiting) {
+    return (
+      <div className="screen center">
+        <SoundToggle />
+        <div className="card" style={{ textAlign: "center", maxWidth: 360 }}>
+          {requestStatus === "rejected" ? (
+            <>
+              <h3>El Jefe ha rechazado tu solicitud</h3>
+              <p className="muted" style={{ marginTop: 8 }}>
+                No has podido unirte a esta partida.
+              </p>
+              <button
+                className="btn btn-secondary"
+                style={{ marginTop: 16 }}
+                onClick={() => nav("/")}
+              >
+                Volver al inicio
+              </button>
+            </>
+          ) : (
+            <>
+              <h3>🦆 Esperando al Pato Jefe…</h3>
+              <p className="muted" style={{ marginTop: 8 }}>
+                La partida ya ha empezado. Hemos avisado al Jefe de que quieres unirte; en cuanto
+                te acepte entrarás automáticamente.
+              </p>
+              <button
+                className="btn btn-secondary"
+                style={{ marginTop: 16 }}
+                onClick={handleCancelRequest}
+              >
+                Cancelar solicitud
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">

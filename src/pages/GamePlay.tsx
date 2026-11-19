@@ -1,3 +1,4 @@
+// → src/pages/
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -12,10 +13,11 @@ import Results from "./Results";
 import SoundToggle from "../components/SoundToggle";
 import LiveRanking from "../components/LiveRanking";
 import SpecialInfoModal from "../components/SpecialInfoModal";
+import JoinRequestModal from "../components/JoinRequestModal";
 import { playAlarmSound, playQuackSound, playSelectSound } from "../lib/sound";
 import { stopMusic } from "../lib/music";
 import { SPECIAL_LABELS } from "../types";
-import type { Duck, Game, Meeting, Player, SpecialDuck, SpecialType, Team } from "../types";
+import type { Duck, Game, JoinRequest, Meeting, Player, SpecialDuck, SpecialType, Team } from "../types";
 
 type Selection =
   | { kind: "find_normal"; duck: Duck }
@@ -33,6 +35,10 @@ export default function GamePlay() {
   const [ducks, setDucks] = useState<Duck[]>([]);
   const [specialDucks, setSpecialDucks] = useState<SpecialDuck[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
+  const [respondingRequest, setRespondingRequest] = useState(false);
+  const [joinRequestError, setJoinRequestError] = useState<string | null>(null);
+  const seenRequestIds = useRef<Set<string> | null>(null);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
@@ -154,6 +160,22 @@ export default function GamePlay() {
         }
       }
 
+      async function refreshJoinRequests() {
+        const { data } = await supabase
+          .from("join_requests")
+          .select("*")
+          .eq("game_id", gameData.id)
+          .eq("status", "pending")
+          .order("created_at", { ascending: true });
+        const list = (data as JoinRequest[]) ?? [];
+        setJoinRequests(list);
+        // El Jefe oye un aviso cuando llega una solicitud nueva.
+        if (seenRequestIds.current && isJefeRef.current) {
+          if (list.some((r) => !seenRequestIds.current!.has(r.id))) playSelectSound();
+        }
+        seenRequestIds.current = new Set(list.map((r) => r.id));
+      }
+
       async function refreshGame() {
         const { data } = await supabase
           .from("games")
@@ -171,6 +193,7 @@ export default function GamePlay() {
           refreshSpecialDucks(),
           refreshTeams(),
           refreshMeetings(),
+          refreshJoinRequests(),
         ]);
       }
 
@@ -188,6 +211,7 @@ export default function GamePlay() {
       setMeetings(initialList);
 
       await Promise.all([refreshPlayers(), refreshDucks(), refreshSpecialDucks(), refreshTeams()]);
+      await refreshJoinRequests();
       setLoading(false);
 
       window.addEventListener("online", refreshAll);
@@ -214,6 +238,11 @@ export default function GamePlay() {
           "postgres_changes",
           { event: "*", schema: "public", table: "meetings", filter: `game_id=eq.${gameData.id}` },
           refreshMeetings
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "join_requests", filter: `game_id=eq.${gameData.id}` },
+          refreshJoinRequests
         )
         .on(
           "postgres_changes",
@@ -309,6 +338,21 @@ export default function GamePlay() {
 
   const isJefe = myPlayer?.role === "jefe";
 
+  async function handleRespondJoin(requestId: string, accept: boolean) {
+    setRespondingRequest(true);
+    setJoinRequestError(null);
+    const { error: rpcError } = await supabase.rpc("respond_join_request", {
+      p_request_id: requestId,
+      p_accept: accept,
+    });
+    setRespondingRequest(false);
+    if (rpcError) {
+      setJoinRequestError(rpcError.message);
+      return;
+    }
+    setJoinRequests((list) => list.filter((r) => r.id !== requestId));
+  }
+
   const publicMeetings = meetings.filter((m) => m.special_type !== "naranja");
 
   const visibleMeetingsForMe = meetings.filter((m) => {
@@ -337,6 +381,13 @@ export default function GamePlay() {
             ))}
           </div>
         )}
+        <JoinRequestModal
+          requests={joinRequests}
+          teams={teams}
+          busy={respondingRequest}
+          error={joinRequestError}
+          onRespond={handleRespondJoin}
+        />
         <JefePanel
           game={game}
           players={players}
